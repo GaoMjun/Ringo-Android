@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="io.github.gaomjun.ringo.MainActivity">
+
+    <TextureView
+        android:id="@+id/cameraView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <View
+        android:id="@+id/trackingBox"
+        android:translationX="100dp"
+        android:translationY="100dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="0dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:padding="0dp"
+        android:background="@drawable/rectviewborder"
+        android:visibility="gone"/>
+
+    <LinearLayout
+        android:layout_width="60dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:orientation="vertical"
+        android:background="@drawable/leftbar_bg_mask">
+
+        <ImageView
+            android:id="@+id/iv_switch_camera_mode"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_weight="10"
+            android:scaleX="1.1"
+            android:scaleY="1.1"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/phone_camera_switch"/>
+
+        <ImageView
+            android:id="@+id/iv_capture"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/iv_capture"/>
+
+        <ImageView
+            android:id="@+id/iv_switch_camera"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_weight="10"
+            android:scaleX="1.1"
+            android:scaleY="1.1"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/phone_camera_switch"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="60dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        android:orientation="vertical"
+        android:background="@drawable/rightbar_bg_mask">
+
+        <ImageView
+            android:id="@+id/iv_ble"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_weight="10"
+            android:scaleX="1.3"
+            android:scaleY="1.3"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/lp_ble_normal_img"/>
+
+        <ImageView
+            android:id="@+id/iv_tracking_status"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/longan_camera_centerpoints_yellow2"/>
+
+        <ImageView
+            android:id="@+id/iv_album"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_weight="10"
+            android:scaleX="0.8"
+            android:scaleY="0.8"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/longan_camera_capture_setting_aeb_icon"/>
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/testImageView"
+        android:layout_width="192dp"
+        android:layout_height="108dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:visibility="gone"/>
+
+</RelativeLayout>

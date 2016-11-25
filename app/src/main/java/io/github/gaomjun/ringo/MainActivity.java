@@ -1,0 +1,303 @@
+package io.github.gaomjun.ringo;
+
+import android.app.Activity;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.TextureView;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.ImageView;
+
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.imgproc.Imgproc;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import io.github.gaomjun.cameraengine.CameraEngine;
+import io.github.gaomjun.cmttracker.CMTTracker;
+import io.github.gaomjun.cvcamera.CVCamera;
+
+public class MainActivity extends Activity implements CVCamera.FrameCallback {
+    private HandlerThread trackingThread = null;
+    private Handler trackingThreadHandler = null;
+
+    private int SCREEN_WIDTH;
+    private int SCREEN_HEIGHT;
+    private int SCALE;
+
+    private Point startPoint = new Point();
+    private Point endPoint = new Point();
+
+    private ViewUtils trackingBoxUtils;
+    private CMTTracker cmtTracker = null;
+    private View trackingBox;
+    private ImageView testImageView;
+    private TextureView cameraView = null;
+    private CVCamera cvCamera = null;
+    private CameraEngine cameraEngine = null;
+    private View.OnClickListener btn_listener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            switch (v.getId()) {
+                case R.id.iv_capture:
+                    cameraEngine.takePicture(new Camera.PictureCallback() {
+                        @Override
+                        public void onPictureTaken(byte[] data, Camera camera) {
+                            cameraEngine.startPreview();
+                            if (data != null) {
+                                savePhotoToAlbum(data);
+                            }
+                        }
+                    });
+                    break;
+                case R.id.iv_switch_camera:
+                    cameraEngine.switchCamera();
+                    break;
+            }
+        }
+    };
+
+    private void savePhotoToAlbum(byte[] data) {
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+        if (bitmap != null) {
+            File file = new File(Environment.getExternalStorageDirectory() + "/" +
+                    Environment.DIRECTORY_DCIM + "/", System.currentTimeMillis() + ".jpg");
+            try {
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
+
+                fileOutputStream.flush();
+                fileOutputStream.close();
+
+                Log.d("onPictureTaken", "take picture success");
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private View.OnTouchListener onTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+
+            final Point point = new Point(event.getX(), event.getY());
+            Log.d("OnTouch", point.toString());
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    startPoint.x = point.x;
+                    startPoint.y = point.y;
+
+                    trackingBoxUtils.setX((int) startPoint.x, 0);
+                    trackingBoxUtils.setY((int) startPoint.y, 0);
+
+                    Log.d("MotionEvent", "touch start" + startPoint.toString());
+
+                    {
+                        canTrackerInit = false;
+                        startTracking = false;
+                        trackingBox.setVisibility(View.GONE);
+                    }
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    endPoint.x = point.x;
+                    endPoint.y = point.y;
+
+                    trackingBox.setVisibility(View.VISIBLE);
+                    trackingBoxUtils.setWidth((int) Math.abs(startPoint.x - endPoint.x), 0);
+                    trackingBoxUtils.setHeight((int) Math.abs(startPoint.y - endPoint.y), 0);
+
+                    Log.d("MotionEvent", "touch move" + endPoint.toString());
+                    break;
+                case MotionEvent.ACTION_UP:
+                    endPoint.x = point.x;
+                    endPoint.y = point.y;
+
+                    if (Math.abs(startPoint.x - endPoint.x) > 100 &&
+                        Math.abs(startPoint.y - endPoint.y) > 100) {
+                        canTrackerInit = true;
+                    } else {
+                        canTrackerInit = false;
+                    }
+                    trackingBoxUtils.setRect(0, 0, 0, 0, 0);
+                    trackingBox.setVisibility(View.GONE);
+                    Log.d("MotionEvent", "touch end" + endPoint.toString());
+                    break;
+            }
+            return true;
+        }
+    };
+    private boolean canTrackerInit = false;
+    private boolean startTracking = false;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        initView();
+        initCvCamera();
+        initTracking();
+    }
+
+    private void initTracking() {
+        cmtTracker = new CMTTracker();
+
+        trackingThread = new HandlerThread("trackingThread");
+        trackingThread.start();
+        trackingThreadHandler = new Handler(trackingThread.getLooper());
+    }
+
+    private void initCvCamera() {
+        cvCamera = new CVCamera();
+        cvCamera.delegate = MainActivity.this;
+        cameraEngine = cvCamera.cameraEngine;
+    }
+
+    private void hidenNavigationBar() {
+        View decorView = getWindow().getDecorView();
+        int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN;
+        decorView.setSystemUiVisibility(uiOptions);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (!cameraView.isAvailable()) {
+            cameraView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+                @Override
+                public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
+                    cameraEngine.openCamera();
+                    cameraEngine.startPreview(surfaceTexture);
+                }
+
+                @Override
+                public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+
+                }
+
+                @Override
+                public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+                    return false;
+                }
+
+                @Override
+                public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+
+                }
+            });
+        } else {
+
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        cameraEngine.releaseCamera();
+
+        super.onStop();
+    }
+
+    private void initView() {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        hidenNavigationBar();
+
+        SCREEN_WIDTH = getWindowManager().getDefaultDisplay().getWidth();
+        SCREEN_HEIGHT = getWindowManager().getDefaultDisplay().getHeight();
+        SCALE = SCREEN_WIDTH / 128;
+
+        cameraView = (TextureView) findViewById(R.id.cameraView);
+
+        findViewById(R.id.iv_capture).setOnClickListener(btn_listener);
+        findViewById(R.id.iv_switch_camera).setOnClickListener(btn_listener);
+        findViewById(R.id.iv_switch_camera_mode).setOnClickListener(btn_listener);
+        findViewById(R.id.iv_tracking_status).setOnClickListener(btn_listener);
+        findViewById(R.id.iv_ble).setOnClickListener(btn_listener);
+        findViewById(R.id.iv_album).setOnClickListener(btn_listener);
+
+        testImageView = (ImageView) findViewById(R.id.testImageView);
+
+        trackingBox = findViewById(R.id.trackingBox);
+        trackingBoxUtils = new ViewUtils(trackingBox);
+
+        findViewById(R.id.activity_main).setOnTouchListener(onTouchListener);
+
+    }
+
+    @Override
+    public void processingFrame(Mat mat) {
+        trackingThreadHandler.post(new TrackingRunnable(mat));
+    }
+
+    private class TrackingRunnable implements Runnable {
+        private Mat mat = null;
+
+        public TrackingRunnable(Mat mat) {
+            this.mat = mat;
+        }
+
+        @Override
+        public void run() {
+
+            Mat smallMat = mat.clone();
+            Imgproc.resize(smallMat, smallMat, new org.opencv.core.Size(128, 72));
+
+            if (canTrackerInit) {
+                cmtTracker.OpenCMT(smallMat.getNativeObjAddr(),
+                        (int) (startPoint.x / SCALE),
+                        (int) (startPoint.y / SCALE),
+                        (int) (endPoint.x / SCALE),
+                        (int) (endPoint.y / SCALE),
+                        cameraEngine.isFrontCamera());
+                canTrackerInit = false;
+                startTracking = true;
+            }
+
+            if (startTracking) {
+                cmtTracker.ProcessCMT(smallMat.getNativeObjAddr(), cameraEngine.isFrontCamera());
+                int[] rect = cmtTracker.CMTgetRect();
+
+                if (cmtTracker.CMTgetResult()) {
+
+                    final Point p = new Point(rect[0], rect[1]);
+
+                    final int width = rect[2];
+                    final int height = rect[3];
+
+                    Log.d("CMTgetRect", p.toString() + " [" + width + "," + height + "]");
+
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE, width * SCALE, height * SCALE, 0);
+                            trackingBox.setVisibility(View.VISIBLE);
+                        }
+                    });
+
+                } else {
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            trackingBox.setVisibility(View.GONE);
+                        }
+                    });
+                }
+            }
+        }
+    }
+}
