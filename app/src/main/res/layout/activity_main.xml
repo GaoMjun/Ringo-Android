@@ -23,6 +23,50 @@
         android:background="@drawable/rectviewborder"
         android:visibility="gone"/>
 
+    <RelativeLayout
+        android:id="@+id/bluetooth_devices_list_view"
+        android:layout_width="240dp"
+        android:layout_height="200dp"
+        android:orientation="vertical"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:visibility="gone"
+        android:background="@color/bluetoothListBackground">
+
+        <TextView
+            android:id="@+id/bluetooth_devices_list_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="@string/Bluetooth"
+            android:textSize="18sp"/>
+
+        <ImageView
+            android:id="@+id/bluetooth_devices_list_close"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignBottom="@+id/bluetooth_devices_list_title"
+            android:src="@drawable/bluetooth_devices_list_close" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/white"
+            android:layout_below="@+id/bluetooth_devices_list_title"/>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/bluetooth_devices_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/bluetooth_devices_list_title"
+            android:layout_alignParentBottom="true">
+
+        </android.support.v7.widget.RecyclerView>
+
+    </RelativeLayout>
+
     <LinearLayout
         android:layout_width="60dp"
         android:layout_height="match_parent"

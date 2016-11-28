@@ -9,12 +9,15 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -24,12 +27,22 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import io.github.gaomjun.cameraengine.CameraEngine;
 import io.github.gaomjun.cmttracker.CMTTracker;
 import io.github.gaomjun.cvcamera.CVCamera;
+import io.github.gaomjun.ringo.BluetoothDevicesList.Adapter.BluetoothDevicesListAdapter;
+import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListCell;
+import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListDataSource;
 
 public class MainActivity extends Activity implements CVCamera.FrameCallback {
+    private RecyclerView bluetoothDevicesListRecyclerView;
+
+    private BluetoothDevicesListAdapter bluetoothDevicesListAdapter;
+    private BluetoothDevicesListDataSource bluetoothDevicesListDataSource =
+            new BluetoothDevicesListDataSource();
+
     private HandlerThread trackingThread = null;
     private Handler trackingThreadHandler = null;
 
@@ -65,7 +78,44 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                 case R.id.iv_switch_camera:
                     cameraEngine.switchCamera();
                     break;
+                case R.id.bluetooth_devices_list_close:
+                    findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.GONE);
+                    break;
+                case R.id.iv_ble:
+                    if (findViewById(R.id.bluetooth_devices_list_view).getVisibility() == View.GONE) {
+                        findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.VISIBLE);
+                    } else {
+                        findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.GONE);
+                    }
+
+                    break;
             }
+        }
+    };
+    private BluetoothDevicesListAdapter.CellClickCallback cellOnClickListener =
+            new BluetoothDevicesListAdapter.CellClickCallback() {
+        @Override
+        public void cellOnClick(int position) {
+            Log.d("cellOnClick", "" + position);
+            Toast.makeText(MainActivity.this, "cellOnClick " + position, Toast.LENGTH_SHORT).show();
+
+            ArrayList<BluetoothDevicesListCell> bluetoothDevicesListData =
+                    bluetoothDevicesListDataSource.getBluetoothDevicesListData();
+            if (!bluetoothDevicesListData.get(position).isConnected()) {
+                for (BluetoothDevicesListCell cell:
+                     bluetoothDevicesListData) {
+                    if (cell.isConnected()) {
+                        cell.setConnected(false);
+                        break;
+                    }
+                }
+                bluetoothDevicesListData.get(position).setConnected(true);
+            }
+
+            bluetoothDevicesListDataSource.setBluetoothDevicesListData(bluetoothDevicesListData);
+
+            bluetoothDevicesListAdapter.setDataSource(bluetoothDevicesListDataSource.getBluetoothDevicesListData());
+            bluetoothDevicesListAdapter.notifyDataSetChanged();
         }
     };
 
@@ -229,6 +279,7 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
         findViewById(R.id.iv_tracking_status).setOnClickListener(btn_listener);
         findViewById(R.id.iv_ble).setOnClickListener(btn_listener);
         findViewById(R.id.iv_album).setOnClickListener(btn_listener);
+        findViewById(R.id.bluetooth_devices_list_close).setOnClickListener(btn_listener);
 
         testImageView = (ImageView) findViewById(R.id.testImageView);
 
@@ -237,6 +288,18 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
 
         findViewById(R.id.activity_main).setOnTouchListener(onTouchListener);
 
+        initBluetoothDevicesList();
+    }
+
+    private void initBluetoothDevicesList() {
+        bluetoothDevicesListRecyclerView = (RecyclerView) findViewById(R.id.bluetooth_devices_list);
+
+        bluetoothDevicesListRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        bluetoothDevicesListAdapter = new BluetoothDevicesListAdapter(this);
+        bluetoothDevicesListAdapter.setDataSource(bluetoothDevicesListDataSource.getBluetoothDevicesListData());
+        bluetoothDevicesListAdapter.setCellClickCallback(cellOnClickListener);
+        bluetoothDevicesListRecyclerView.setAdapter(bluetoothDevicesListAdapter);
     }
 
     @Override
