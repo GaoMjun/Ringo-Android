@@ -4,7 +4,8 @@
     android:layout_height="40dp"
     android:paddingLeft="10dp"
     android:paddingRight="10dp"
-    android:id="@+id/bluetooth_devices_list_cell">
+    android:id="@+id/bluetooth_devices_list_cell"
+    android:background="@drawable/ripple_click_effect">
 
     <TextView
         android:id="@+id/bluetooth_device_name"
