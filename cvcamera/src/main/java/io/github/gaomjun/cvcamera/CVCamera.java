@@ -31,9 +31,6 @@ public class CVCamera {
                         public void onPreviewFrame(byte[] data, Camera camera) {
                             Mat mat = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
                             mat.put(0, 0, data);
-                            if (cameraEngine.isFrontCamera()) {
-                                
-                            }
                             delegate.processingFrame(mat);
                         }
                     };
