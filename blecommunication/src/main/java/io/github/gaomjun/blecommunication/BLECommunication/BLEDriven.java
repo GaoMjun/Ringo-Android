@@ -196,8 +196,10 @@ public class BLEDriven {
 
     public void connectToDevice(String address) {
         stopScanDevices();
-        if (bluetoothDevice.getAddress().equals(address)) {
-            return;
+        if (bluetoothDevice != null) {
+            if (bluetoothDevice.getAddress().equals(address)) {
+                return;
+            }
         }
         for (BluetoothDevice device:
                 bluetoothDeviceList) {
