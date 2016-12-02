@@ -42,7 +42,7 @@ public class BLEDriven {
     private BluetoothDevice bluetoothDevice;
 
     private static final String SERVICE_UUID = "0000ff00-0000-1000-8000-00805f9b34fb";
-    private static final String CHARACTERISTIC_UUID = "0000ff02-0000-1000-8000-00805f9b34fb";
+    private static final String CHARACTERISTIC_UUID = "0000ff01-0000-1000-8000-00805f9b34fb";
     private static final String DISCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
     private List<BluetoothDevice> bluetoothDeviceList = new ArrayList<>();
 
@@ -245,7 +245,7 @@ public class BLEDriven {
     }
 
     public interface RecvCallback {
-        void onRecvData(RecvMessage message);
+        void onRecvData(RecvMessage recvMessage);
     }
 
     private HandlerThread writeHandlerThread = new HandlerThread("writeHandlerThread");

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import io.github.gaomjun.blecommunication.BLECommunication.BLEDriven;
 import io.github.gaomjun.blecommunication.BLECommunication.HEXString;
@@ -34,8 +35,10 @@ public class MainActivity extends Activity {
     private class RecvDataListener implements BLEDriven.RecvCallback {
 
         @Override
-        public void onRecvData(RecvMessage message) {
-            Log.d("recv", message.getMessageHexString());
+        public void onRecvData(RecvMessage recvMessage) {
+            Log.d("recv", recvMessage.getMessageHexString());
+
+
         }
     }
 

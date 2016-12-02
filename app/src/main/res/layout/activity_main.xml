@@ -127,7 +127,7 @@
             android:layout_height="60dp"
             android:layout_weight="1"
             android:layout_gravity="center_horizontal"
-            android:src="@drawable/longan_camera_centerpoints_yellow2"/>
+            android:src="@drawable/iv_switch_tracking"/>
 
         <ImageView
             android:id="@+id/iv_album"

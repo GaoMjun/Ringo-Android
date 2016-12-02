@@ -30,9 +30,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import io.github.gaomjun.blecommunication.BLECommunication.BLEDriven;
+import io.github.gaomjun.blecommunication.BLECommunication.Message.GimbalMobileBLEProtocol;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.RecvMessage;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.SendMessage;
 import io.github.gaomjun.cameraengine.CameraEngine;
@@ -41,6 +43,7 @@ import io.github.gaomjun.cvcamera.CVCamera;
 import io.github.gaomjun.ringo.BluetoothDevicesList.Adapter.BluetoothDevicesListAdapter;
 import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListCell;
 import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListDataSource;
+import io.github.gaomjun.utils.TypeConversion.TypeConversion;
 
 public class MainActivity extends Activity implements CVCamera.FrameCallback {
     private BLEDriven bleDriven = null;
@@ -104,6 +107,17 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                     }
 
                     break;
+                case R.id.iv_tracking_status:
+                    ImageView iv_tracking_status = (ImageView) findViewById(R.id.iv_tracking_status);
+                    iv_tracking_status.setSelected(!iv_tracking_status.isSelected());
+                    if (iv_tracking_status.isSelected()) {
+                        Log.d("iv_tracking_status", "selected");
+                        sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_ON);
+                    } else {
+                        Log.d("iv_tracking_status", "no selected");
+                        sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_OFF);
+                    }
+                    break;
             }
         }
     };
@@ -112,7 +126,6 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
         @Override
         public void cellOnClick(int position) {
             Log.d("cellOnClick", "" + position);
-            Toast.makeText(MainActivity.this, "cellOnClick " + position, Toast.LENGTH_SHORT).show();
 
             if (bluetoothDevice != null) {
                 if (bluetoothDevice.getAddress().equals(bluetoothDeviceList.get(position))) {
@@ -127,6 +140,8 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
             bleDriven.connectToDevice(bluetoothDevice.getAddress());
         }
     };
+    private boolean canTracking = false;
+    private boolean connectedToDevice = false;
 
     private void savePhotoToAlbum(byte[] data) {
         Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
@@ -152,6 +167,7 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
     private View.OnTouchListener onTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
+            if (canTracking == false) return true;
 
             final Point point = new Point(event.getX(), event.getY());
             Log.d("OnTouch", point.toString());
@@ -205,8 +221,36 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
     private class RecvDataListener implements BLEDriven.RecvCallback {
 
         @Override
-        public void onRecvData(RecvMessage message) {
-            Log.d("recv", message.getMessageHexString());
+        public void onRecvData(RecvMessage recvMessage) {
+            Log.d("recv", recvMessage.getMessageHexString());
+
+            if (Arrays.equals(recvMessage.getCommand(), GimbalMobileBLEProtocol.REMOTECOMMAND_CAPTURE)) {
+                //TODO
+                //capture action
+                sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_CAPTRUE_OK);
+            } else if (Arrays.equals(recvMessage.getCommand(), GimbalMobileBLEProtocol.REMOTECOMMAND_RECORD)) {
+                //TODO
+                //record action
+                sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_RECORD_OK);
+            } else if (Arrays.equals(recvMessage.getCommand(), GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR)){
+                sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMADNBACK_CLEAR);
+            }
+
+            if (Arrays.equals(recvMessage.getGimbalStatus(), GimbalMobileBLEProtocol.GIMBALSTATUS_RUN)) {
+                // enable switch tracking status button
+                findViewById(R.id.iv_tracking_status).setEnabled(true);
+            } else {
+                // diable switch tracking status button
+                findViewById(R.id.iv_tracking_status).setEnabled(false);
+            }
+
+            if (Arrays.equals(recvMessage.getGimbalMode(), GimbalMobileBLEProtocol.GIMBALMODE_FACEFOLLOW)) {
+                // can tracking
+                canTracking = true;
+            } else {
+                // disable tracking
+                canTracking = false;
+            }
         }
     }
 
@@ -217,12 +261,15 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
             switch (status) {
                 case BLEDriven.CONNECTED:
                     Log.d("onConnecting", "CONNECTED");
+                    connectedToDevice = true;
                     datasourceChanged(bluetoothDeviceList, bluetoothDevice);
                     break;
                 case BLEDriven.CONNECTING:
+                    connectedToDevice = false;
                     Log.d("onConnecting", "CONNECTING");
                     break;
                 case BLEDriven.DISCONNECTED:
+                    connectedToDevice = false;
                     Log.d("onConnecting", "DISCONNECTED");
                     break;
             }
@@ -296,7 +343,8 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
         if (!cameraView.isAvailable()) {
             cameraView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
                 @Override
-                public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
+                public void onSurfaceTextureAvailable(
+                        SurfaceTexture surfaceTexture, int width, int height) {
                     cameraEngine.openCamera();
                     cameraEngine.startPreview(surfaceTexture);
                 }
@@ -362,7 +410,8 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
         bluetoothDevicesListRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         bluetoothDevicesListAdapter = new BluetoothDevicesListAdapter(this);
-        bluetoothDevicesListAdapter.setDataSource(bluetoothDevicesListDataSource.getBluetoothDevicesListData());
+        bluetoothDevicesListAdapter.setDataSource(
+                bluetoothDevicesListDataSource.getBluetoothDevicesListData());
         bluetoothDevicesListAdapter.setCellClickCallback(cellOnClickListener);
         bluetoothDevicesListRecyclerView.setAdapter(bluetoothDevicesListAdapter);
     }
@@ -401,6 +450,7 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                 int[] rect = cmtTracker.CMTgetRect();
 
                 if (cmtTracker.CMTgetResult()) {
+                    sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_GOOD);
 
                     final Point p = new Point(rect[0], rect[1]);
 
@@ -412,20 +462,24 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE, width * SCALE, height * SCALE, 0);
+                            trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE,
+                                    width * SCALE, height * SCALE, 0);
                             trackingBox.setVisibility(View.VISIBLE);
                         }
                     });
 
                     {
-                        int xoffset = (int) (SCREEN_WIDTH / 2 - p.x);
-                        int yoffset = (int) (SCREEN_HEIGHT / 2 - p.y);
+                        int xoffset = (int) (SCREEN_WIDTH / 2 - p.x*SCALE);
+                        int yoffset = (int) (SCREEN_HEIGHT / 2 - p.y*SCALE);
                         Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
 
-                        sendMessage.setXoffset();
+                        sendMessage.setXoffset(TypeConversion.intToBytes(xoffset));
+                        sendMessage.setYoffset(TypeConversion.intToBytes(yoffset));
+
                     }
 
                 } else {
+                    sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -433,6 +487,11 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                         }
                     });
                 }
+            }
+
+            if (bluetoothDevice != null) {
+                bleDriven.send(sendMessage.getMessage());
+                Log.d("send", sendMessage.getMessageHexString());
             }
         }
     }
