@@ -1,36 +1,56 @@
 package io.github.gaomjun.ringo.BluetoothDevicesList.DataSource;
 
+import android.bluetooth.BluetoothDevice;
+
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by qq on 28/11/2016.
  */
 
 public class BluetoothDevicesListDataSource {
-    private ArrayList<BluetoothDevicesListCell> bluetoothDevicesListData;
+    private List<BluetoothDevice> bluetoothDevicesListData;
+    private BluetoothDevice connectedDevice;
 
     public ArrayList<BluetoothDevicesListCell> getBluetoothDevicesListData() {
-        if (bluetoothDevicesListData != null)
-            return bluetoothDevicesListData;
+        ArrayList<BluetoothDevicesListCell> bluetoothDevicesList = new ArrayList<>();
 
-        bluetoothDevicesListData = new ArrayList<>();
-
-        final String[] deviceNameArray = {"aa", "bb", "cc"};
-        for (int i = 0; i < 5; i++) {
-
-            for (String deviceName:
-                    deviceNameArray) {
+        if ((bluetoothDevicesListData == null) || (bluetoothDevicesListData.size() == 0)) {
+            if (connectedDevice == null) {
+                return new ArrayList<BluetoothDevicesListCell>();
+            } else {
                 BluetoothDevicesListCell cell = new BluetoothDevicesListCell();
-                cell.setBluetoothDeviceName(deviceName);
-                cell.setConnected(false);
-
-                bluetoothDevicesListData.add(cell);
+                cell.setBluetoothDeviceName(connectedDevice.getName());
+                cell.setConnected(true);
+                bluetoothDevicesList.add(cell);
             }
         }
-        return bluetoothDevicesListData;
+
+        for (BluetoothDevice device:
+                bluetoothDevicesListData) {
+            BluetoothDevicesListCell cell = new BluetoothDevicesListCell();
+
+            cell.setBluetoothDeviceName(device.getName());
+            if (connectedDevice != null) {
+                if (connectedDevice.getAddress().equals(device.getAddress())) {
+                    cell.setConnected(true);
+                } else {
+                    cell.setConnected(false);
+                }
+            } else {
+                cell.setConnected(false);
+            }
+
+            bluetoothDevicesList.add(cell);
+        }
+
+        return bluetoothDevicesList;
     }
 
-    public void setBluetoothDevicesListData(ArrayList<BluetoothDevicesListCell> bluetoothDevicesListData) {
+    public void setBluetoothDevicesListData(List<BluetoothDevice> bluetoothDevicesListData,
+                                            BluetoothDevice connectedDevice) {
         this.bluetoothDevicesListData = bluetoothDevicesListData;
+        this.connectedDevice = connectedDevice;
     }
 }

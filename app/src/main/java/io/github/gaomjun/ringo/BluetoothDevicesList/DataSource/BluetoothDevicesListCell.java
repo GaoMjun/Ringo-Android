@@ -1,10 +1,13 @@
 package io.github.gaomjun.ringo.BluetoothDevicesList.DataSource;
 
+import android.bluetooth.BluetoothDevice;
+
 /**
  * Created by qq on 28/11/2016.
  */
 
 public class BluetoothDevicesListCell {
+    private BluetoothDevice bluetoothDevice;
     private String bluetoothDeviceName;
     private boolean isConnected;
 

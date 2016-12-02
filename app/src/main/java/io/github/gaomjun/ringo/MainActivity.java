@@ -1,6 +1,7 @@
 package io.github.gaomjun.ringo;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothDevice;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -29,7 +30,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
+import io.github.gaomjun.blecommunication.BLECommunication.BLEDriven;
+import io.github.gaomjun.blecommunication.BLECommunication.Message.RecvMessage;
+import io.github.gaomjun.blecommunication.BLECommunication.Message.SendMessage;
 import io.github.gaomjun.cameraengine.CameraEngine;
 import io.github.gaomjun.cmttracker.CMTTracker;
 import io.github.gaomjun.cvcamera.CVCamera;
@@ -38,11 +43,16 @@ import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesL
 import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListDataSource;
 
 public class MainActivity extends Activity implements CVCamera.FrameCallback {
+    private BLEDriven bleDriven = null;
+    private SendMessage sendMessage = SendMessage.getInstance();
+
     private RecyclerView bluetoothDevicesListRecyclerView;
 
     private BluetoothDevicesListAdapter bluetoothDevicesListAdapter;
     private BluetoothDevicesListDataSource bluetoothDevicesListDataSource =
             new BluetoothDevicesListDataSource();
+    private List<BluetoothDevice> bluetoothDeviceList = new ArrayList<>();
+    private BluetoothDevice bluetoothDevice;
 
     private HandlerThread trackingThread = null;
     private Handler trackingThreadHandler = null;
@@ -81,12 +91,20 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                     break;
                 case R.id.bluetooth_devices_list_close:
                     findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.GONE);
+                    bleDriven.stopScanDevices();
                     break;
                 case R.id.iv_ble:
                     if (findViewById(R.id.bluetooth_devices_list_view).getVisibility() == View.GONE) {
                         findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.VISIBLE);
+                        bluetoothDevicesListDataSource.setBluetoothDevicesListData(
+                                new ArrayList<BluetoothDevice>(), bluetoothDevice);
+                        bluetoothDevicesListAdapter.setDataSource(
+                                bluetoothDevicesListDataSource.getBluetoothDevicesListData());
+                        bluetoothDevicesListAdapter.notifyDataSetChanged();
+                        bleDriven.scanDevices();
                     } else {
                         findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.GONE);
+                        bleDriven.stopScanDevices();
                     }
 
                     break;
@@ -100,23 +118,26 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
             Log.d("cellOnClick", "" + position);
             Toast.makeText(MainActivity.this, "cellOnClick " + position, Toast.LENGTH_SHORT).show();
 
-            ArrayList<BluetoothDevicesListCell> bluetoothDevicesListData =
-                    bluetoothDevicesListDataSource.getBluetoothDevicesListData();
-            if (!bluetoothDevicesListData.get(position).isConnected()) {
-                for (BluetoothDevicesListCell cell:
-                     bluetoothDevicesListData) {
-                    if (cell.isConnected()) {
-                        cell.setConnected(false);
-                        break;
-                    }
-                }
-                bluetoothDevicesListData.get(position).setConnected(true);
-            }
-
-            bluetoothDevicesListDataSource.setBluetoothDevicesListData(bluetoothDevicesListData);
-
-            bluetoothDevicesListAdapter.setDataSource(bluetoothDevicesListDataSource.getBluetoothDevicesListData());
-            bluetoothDevicesListAdapter.notifyDataSetChanged();
+            bluetoothDevice = bluetoothDeviceList.get(position);
+            Log.d("connectToDevice", bluetoothDevice.getName());
+            bleDriven.connectToDevice(bluetoothDevice.getAddress());
+//            ArrayList<BluetoothDevicesListCell> bluetoothDevicesListData =
+//                    bluetoothDevicesListDataSource.getBluetoothDevicesListData();
+//            if (!bluetoothDevicesListData.get(position).isConnected()) {
+//                for (BluetoothDevicesListCell cell:
+//                     bluetoothDevicesListData) {
+//                    if (cell.isConnected()) {
+//                        cell.setConnected(false);
+//                        break;
+//                    }
+//                }
+//                bluetoothDevicesListData.get(position).setConnected(true);
+//            }
+//
+//            bluetoothDevicesListDataSource.setBluetoothDevicesListData(bluetoothDevicesListData);
+//
+//            bluetoothDevicesListAdapter.setDataSource(bluetoothDevicesListDataSource.getBluetoothDevicesListData());
+//            bluetoothDevicesListAdapter.notifyDataSetChanged();
         }
     };
 
@@ -194,6 +215,53 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
     private boolean canTrackerInit = false;
     private boolean startTracking = false;
 
+    private class RecvDataListener implements BLEDriven.RecvCallback {
+
+        @Override
+        public void onRecvData(RecvMessage message) {
+            Log.d("recv", message.getMessageHexString());
+        }
+    }
+
+    private class BLEConnectingListener implements BLEDriven.ConnectingStatusCallback {
+
+        @Override
+        public void onConnecting(int status) {
+            switch (status) {
+                case BLEDriven.CONNECTED:
+                    Log.d("onConnecting", "CONNECTED");
+//                    bluetoothDevicesListAdapter.notifyDataSetChanged();
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this, "connected to " + bluetoothDevice.getName(),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                    break;
+                case BLEDriven.CONNECTING:
+                    Log.d("onConnecting", "CONNECTING");
+                    break;
+                case BLEDriven.DISCONNECTED:
+                    Log.d("onConnecting", "DISCONNECTED");
+                    break;
+            }
+        }
+    }
+
+    private class BLEDeviceListUpdateListener implements BLEDriven.BLEDeviceListUpdateCallback {
+
+        @Override
+        public void onBLEDeviceListUpdate(List<BluetoothDevice> bluetoothDeviceList,
+                                          BluetoothDevice connectedDevice) {
+            MainActivity.this.bluetoothDeviceList = bluetoothDeviceList;
+            bluetoothDevicesListDataSource.setBluetoothDevicesListData(bluetoothDeviceList, connectedDevice);
+            bluetoothDevicesListAdapter.setDataSource(bluetoothDevicesListDataSource.getBluetoothDevicesListData());
+            bluetoothDevicesListAdapter.notifyDataSetChanged();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -201,7 +269,15 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
 
         initView();
         initCvCamera();
+        initBLEDriven();
         initTracking();
+    }
+
+    private void initBLEDriven() {
+        bleDriven = new BLEDriven(MainActivity.this);
+        bleDriven.setBleDeviceListUpdateCallback(new BLEDeviceListUpdateListener());
+        bleDriven.setRecvCallback(new RecvDataListener());
+        bleDriven.setConnectingStatusCallback(new BLEConnectingListener());
     }
 
     private void initTracking() {

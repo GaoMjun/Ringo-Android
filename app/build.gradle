@@ -28,4 +28,5 @@ dependencies {
     compile project(':cvcamera')
     compile project(':cmttracker')
     compile 'com.android.support:recyclerview-v7:25.0.1'
+    compile project(':blecommunication')
 }

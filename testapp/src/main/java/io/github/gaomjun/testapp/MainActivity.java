@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
         bleDriven = new BLEDriven(MainActivity.this);
         bleDriven.setRecvCallback(new RecvDataListener());
         bleDriven.setConnectingStatusCallback(new BLEConnectingListener());
-
+        bleDriven.scanDevices();
     }
 
     private class RecvDataListener implements BLEDriven.RecvCallback {
@@ -65,6 +65,7 @@ public class MainActivity extends Activity {
                     e.printStackTrace();
                 }
                 bleDriven.send(sendMessage.getMessage());
+                Log.d("send", sendMessage.getMessageHexString());
             }
         }
     }
