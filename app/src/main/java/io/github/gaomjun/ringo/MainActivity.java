@@ -114,6 +114,14 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
             Log.d("cellOnClick", "" + position);
             Toast.makeText(MainActivity.this, "cellOnClick " + position, Toast.LENGTH_SHORT).show();
 
+            if (bluetoothDevice != null) {
+                if (bluetoothDevice.getAddress().equals(bluetoothDeviceList.get(position))) {
+                    return;
+                } else {
+                    bleDriven.disconnectDevice();
+                    bluetoothDevice = null;
+                }
+            }
             bluetoothDevice = bluetoothDeviceList.get(position);
             Log.d("connectToDevice", bluetoothDevice.getName());
             bleDriven.connectToDevice(bluetoothDevice.getAddress());
@@ -408,6 +416,14 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                             trackingBox.setVisibility(View.VISIBLE);
                         }
                     });
+
+                    {
+                        int xoffset = (int) (SCREEN_WIDTH / 2 - p.x);
+                        int yoffset = (int) (SCREEN_HEIGHT / 2 - p.y);
+                        Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
+
+                        sendMessage.setXoffset();
+                    }
 
                 } else {
                     MainActivity.this.runOnUiThread(new Runnable() {

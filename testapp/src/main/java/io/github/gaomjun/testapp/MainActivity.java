@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.nio.ByteBuffer;
+
 import io.github.gaomjun.blecommunication.BLECommunication.BLEDriven;
 import io.github.gaomjun.blecommunication.BLECommunication.HEXString;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.RecvMessage;
@@ -23,6 +25,10 @@ public class MainActivity extends Activity {
         bleDriven.setRecvCallback(new RecvDataListener());
         bleDriven.setConnectingStatusCallback(new BLEConnectingListener());
         bleDriven.scanDevices();
+
+        byte[] bytes = ByteBuffer.allocate(4).putInt(-1001).array();
+        String hexString = HEXString.bytes2HexString(bytes);
+        Log.d("HEXString", hexString);
     }
 
     private class RecvDataListener implements BLEDriven.RecvCallback {
