@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 import io.github.gaomjun.blecommunication.BLECommunication.Message.RecvMessage;
+import io.github.gaomjun.blecommunication.BLECommunication.Message.SendMessage;
 
 import static android.bluetooth.BluetoothProfile.GATT;
 
@@ -34,12 +35,16 @@ import static android.bluetooth.BluetoothProfile.GATT;
  */
 
 public class BLEDriven {
+    private SendMessage sendMessage = SendMessage.getInstance();
+
     private BluetoothManager bluetoothManager;
 
     private BluetoothGatt bluetoothGatt;
     private BluetoothGattCharacteristic bluetoothGattCharacteristic;
     private BluetoothGattService bluetoothGattService;
     private BluetoothDevice bluetoothDevice;
+
+    public boolean connectedToDevice = false;
 
     private static final String SERVICE_UUID = "0000ff00-0000-1000-8000-00805f9b34fb";
     private static final String CHARACTERISTIC_UUID = "0000ff01-0000-1000-8000-00805f9b34fb";
@@ -62,6 +67,7 @@ public class BLEDriven {
                     bluetoothGatt.discoverServices();
                     break;
                 case BluetoothProfile.STATE_DISCONNECTED:
+                    connectedToDevice = false;
                     break;
             }
         }
@@ -88,6 +94,7 @@ public class BLEDriven {
                         }
 
                         connectingStatusCallback.onConnecting(CONNECTED);
+                        connectedToDevice = true;
                     }
                 }
             }
@@ -164,6 +171,8 @@ public class BLEDriven {
         }
 
         bluetoothLeScanner = bluetoothManagerAdapter.getBluetoothLeScanner();
+
+        new WriteThread().start();
     }
 
     public void scanDevices() {
@@ -207,6 +216,7 @@ public class BLEDriven {
                 bluetoothDevice = bluetoothManagerAdapter.getRemoteDevice(device.getAddress());
                 bluetoothGatt = device.connectGatt(context, false, bluetoothGattCallback);
                 connectingStatusCallback.onConnecting(CONNECTING);
+                connectedToDevice = false;
             }
         }
     }
@@ -217,7 +227,10 @@ public class BLEDriven {
                     BluetoothProfile.STATE_CONNECTED) {
                 bluetoothGatt.disconnect();
                 bluetoothDevice = null;
+                bluetoothGattService = null;
+                bluetoothGattCharacteristic = null;
                 connectingStatusCallback.onConnecting(DISCONNECTED);
+                connectedToDevice = false;
             }
         }
     }
@@ -225,7 +238,15 @@ public class BLEDriven {
     public void close() {
         if (bluetoothGatt != null) {
             bluetoothGatt.close();
+
             bluetoothGatt = null;
+            bluetoothDevice = null;
+            bluetoothGattCharacteristic = null;
+            bluetoothGattService = null;
+            bluetoothManager = null;
+            bluetoothManagerAdapter = null;
+            bluetoothLeScanner = null;
+            bluetoothGattCallback = null;
         }
     }
 
@@ -289,4 +310,24 @@ public class BLEDriven {
         void onBLEDeviceListUpdate(List<BluetoothDevice> bluetoothDeviceList, BluetoothDevice connectedDevice);
     }
 
+    class WriteThread extends Thread {
+
+        @Override
+        public void run() {
+            super.run();
+
+            while (!isInterrupted()) {
+                if (connectedToDevice) {
+                    byte[] message = sendMessage.getMessage();
+                    write(message);
+                    Log.d("send", sendMessage.getMessageHexString());
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
 }

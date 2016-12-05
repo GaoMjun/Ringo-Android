@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -74,20 +75,40 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
     private TextureView cameraView = null;
     private CVCamera cvCamera = null;
     private CameraEngine cameraEngine = null;
+    private boolean isRecrding = false;
+
     private View.OnClickListener btn_listener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.iv_capture:
-                    cameraEngine.takePicture(new Camera.PictureCallback() {
-                        @Override
-                        public void onPictureTaken(byte[] data, Camera camera) {
-                            cameraEngine.startPreview();
-                            if (data != null) {
-                                savePhotoToAlbum(data);
+                    {
+                        ImageView imageView = (ImageView) findViewById(R.id.iv_capture);
+                        Integer tag = (Integer) imageView.getTag();
+
+                        if ((tag == null) || tag == R.drawable.iv_capture) {
+                            cameraEngine.takePicture(new Camera.PictureCallback() {
+                                @Override
+                                public void onPictureTaken(byte[] data, Camera camera) {
+                                    cameraEngine.startPreview();
+                                    if (data != null) {
+                                        savePhotoToAlbum(data);
+                                    }
+                                }
+                            });
+
+                        } else {
+                            if (!isRecrding) {
+                                // start record
+                                imageView.setSelected(!imageView.isSelected());
+                            } else {
+                                isRecrding = true;
+                                // stop record
+                                imageView.setSelected(!imageView.isSelected());
                             }
                         }
-                    });
+                    }
+
                     break;
                 case R.id.iv_switch_camera:
                     cameraEngine.switchCamera();
@@ -117,6 +138,32 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                         Log.d("iv_tracking_status", "no selected");
                         sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_OFF);
                     }
+                    break;
+                case R.id.iv_switch_camera_mode:
+                    {
+                        ImageView imageView = (ImageView) findViewById(R.id.iv_switch_camera_mode);
+                        Integer tag = (Integer) imageView.getTag();
+                        if ((tag == null) || tag == R.drawable.camera_mode_photo) {
+                            imageView.setImageResource(R.drawable.camera_mode_video);
+                            imageView.setTag(R.drawable.camera_mode_video);
+                            imageView.setScaleX((float) 0.8);
+                            imageView.setScaleY((float) 0.8);
+
+                            imageView = (ImageView) findViewById(R.id.iv_capture);
+                            imageView.setImageResource(R.drawable.iv_record);
+                            imageView.setTag(R.drawable.iv_record);
+                        } else {
+                            imageView.setImageResource(R.drawable.camera_mode_photo);
+                            imageView.setTag(R.drawable.camera_mode_photo);
+                            imageView.setScaleX((float) 0.9);
+                            imageView.setScaleY((float) 0.9);
+
+                            imageView = (ImageView) findViewById(R.id.iv_capture);
+                            imageView.setImageResource(R.drawable.iv_capture);
+                            imageView.setTag(R.drawable.iv_capture);
+                        }
+                    }
+
                     break;
             }
         }
@@ -469,8 +516,21 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                     });
 
                     {
-                        int xoffset = (int) (SCREEN_WIDTH / 2 - p.x*SCALE);
-                        int yoffset = (int) (SCREEN_HEIGHT / 2 - p.y*SCALE);
+                        int xoffset = 0;
+                        int yoffset = 0;
+                        if (cameraEngine.isFrontCamera()) {
+//                            int[] location = new int[];
+//                            trackingBox.getLocationOnScreen(location);
+                            xoffset = (int) (SCREEN_WIDTH / 2 - p.x*SCALE);
+                            yoffset = (int) (SCREEN_HEIGHT / 2 - p.y*SCALE);
+                        } else {
+                            xoffset = (int) (-SCREEN_WIDTH / 2 + p.x*SCALE);
+                            yoffset = (int) (-SCREEN_HEIGHT / 2 + p.y*SCALE);
+                        }
+
+                        xoffset /= 10;
+                        yoffset /= 10;
+
                         Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
 
                         sendMessage.setXoffset(TypeConversion.intToBytes(xoffset));
@@ -480,6 +540,8 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
 
                 } else {
                     sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
+                    sendMessage.setXoffset(TypeConversion.intToBytes(0));
+                    sendMessage.setYoffset(TypeConversion.intToBytes(0));
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -489,10 +551,6 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                 }
             }
 
-            if (bluetoothDevice != null) {
-                bleDriven.send(sendMessage.getMessage());
-                Log.d("send", sendMessage.getMessageHexString());
-            }
         }
     }
 }
