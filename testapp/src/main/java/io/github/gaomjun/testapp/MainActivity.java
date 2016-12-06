@@ -5,10 +5,9 @@ import android.os.Bundle;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import io.github.gaomjun.blecommunication.BLECommunication.BLEDriven;
-import io.github.gaomjun.blecommunication.BLECommunication.HEXString;
+import io.github.gaomjun.utils.TypeConversion.HEXString;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.RecvMessage;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.SendMessage;
 

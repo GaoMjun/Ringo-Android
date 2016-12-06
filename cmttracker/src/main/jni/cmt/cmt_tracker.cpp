@@ -4,15 +4,20 @@
 
 #include <jni.h>
 #include <CMT.h>
+#include <android/log.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+static const char *TAG = "CMT_Tracker";
+#define LOGD(fmt, args...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##args)
+
 using namespace std;
 using namespace cv;
 
 static bool CMTinitiated = false;
+static int initTrackedPoints = 0;
 static CMT *cmt = new CMT();
 
 JNIEXPORT void JNICALL
@@ -29,9 +34,11 @@ Java_io_github_gaomjun_cmttracker_CMTTracker_OpenCMT(JNIEnv *env, jclass thiz,
     Point p2(x2, y2);
 
     CMTinitiated = false;
-    if (cmt->initialise(im_gray, p1, p2))
+    if (cmt->initialise(im_gray, p1, p2)) {
+        initTrackedPoints = cmt->activeKeypoints.size();
+        LOGD("initTrackingPoints %d", initTrackedPoints);
         CMTinitiated = true;
-
+    }
 }
 
 JNIEXPORT void JNICALL
@@ -75,9 +82,13 @@ Java_io_github_gaomjun_cmttracker_CMTTracker_CMTgetRect(JNIEnv *env, jclass thiz
 
 JNIEXPORT jboolean JNICALL
 Java_io_github_gaomjun_cmttracker_CMTTracker_CMTgetResult(JNIEnv *env, jclass type) {
+    bool result = cmt->hasResult;
+    LOGD("initTrackingPoints %d %d", initTrackedPoints, cmt->trackedKeypoints.size());
+    if (result && (cmt->trackedKeypoints.size() > (initTrackedPoints/2))) {
+        return true;
+    }
 
-    return cmt->hasResult;
-
+    return false;
 }
 
 #ifdef __cplusplus

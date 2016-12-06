@@ -4,7 +4,7 @@ import android.util.Log;
 
 import java.util.Arrays;
 
-import io.github.gaomjun.blecommunication.BLECommunication.HEXString;
+import io.github.gaomjun.utils.TypeConversion.HEXString;
 import io.github.gaomjun.utils.TypeConversion.ByteArray;
 
 /**

@@ -1,6 +1,6 @@
 package io.github.gaomjun.blecommunication.BLECommunication.Message;
 
-import io.github.gaomjun.blecommunication.BLECommunication.HEXString;
+import io.github.gaomjun.utils.TypeConversion.HEXString;
 
 /**
  * Created by qq on 30/11/2016.

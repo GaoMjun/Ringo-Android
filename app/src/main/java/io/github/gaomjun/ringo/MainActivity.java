@@ -137,6 +137,13 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                     } else {
                         Log.d("iv_tracking_status", "no selected");
                         sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_OFF);
+                        sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
+                        canTrackerInit = false;
+                        startTracking = false;
+                        if (trackingBox.getVisibility() != View.GONE) {
+                            trackingBox.setVisibility(View.GONE);
+                        }
+
                     }
                     break;
                 case R.id.iv_switch_camera_mode:
@@ -253,6 +260,10 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                         canTrackerInit = true;
                     } else {
                         canTrackerInit = false;
+                        startTracking = false;
+                        Log.d("OnTouch", "selected box is too small");
+                        sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
+
                     }
                     trackingBoxUtils.setRect(0, 0, 0, 0, 0);
                     trackingBox.setVisibility(View.GONE);
@@ -317,6 +328,8 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                     break;
                 case BLEDriven.DISCONNECTED:
                     connectedToDevice = false;
+//                    bluetoothDevice = null;
+//                    datasourceChanged(bluetoothDeviceList, bluetoothDevice);
                     Log.d("onConnecting", "DISCONNECTED");
                     break;
             }
@@ -494,7 +507,7 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
 
             if (startTracking) {
                 cmtTracker.ProcessCMT(smallMat.getNativeObjAddr(), cameraEngine.isFrontCamera());
-                int[] rect = cmtTracker.CMTgetRect();
+                final int[] rect = cmtTracker.CMTgetRect();
 
                 if (cmtTracker.CMTgetResult()) {
                     sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_GOOD);
@@ -509,8 +522,11 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            final int w = ((rect[2]*SCALE)>SCREEN_WIDTH) ? SCREEN_WIDTH : rect[2]*SCALE;
+                            final int h = (((rect[3]*SCALE)>SCREEN_HEIGHT) ? SCREEN_HEIGHT : rect[3]*SCALE);
+
                             trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE,
-                                    width * SCALE, height * SCALE, 0);
+                                    w, h, 0);
                             trackingBox.setVisibility(View.VISIBLE);
                         }
                     });
@@ -518,24 +534,22 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                     {
                         int xoffset = 0;
                         int yoffset = 0;
+
                         if (cameraEngine.isFrontCamera()) {
-//                            int[] location = new int[];
-//                            trackingBox.getLocationOnScreen(location);
-                            xoffset = (int) (SCREEN_WIDTH / 2 - p.x*SCALE);
-                            yoffset = (int) (SCREEN_HEIGHT / 2 - p.y*SCALE);
+                            xoffset = (int) (mat.cols()/15/2 - (p.x + width/2.0));
+                            yoffset = (int) (mat.rows()/15/2 - (p.y + height/2.0));
                         } else {
-                            xoffset = (int) (-SCREEN_WIDTH / 2 + p.x*SCALE);
-                            yoffset = (int) (-SCREEN_HEIGHT / 2 + p.y*SCALE);
+                            xoffset = (int) (-mat.cols()/15/2 + (p.x + width/2.0));
+                            yoffset = (int) (-mat.rows()/15/2 + (p.y + height/2.0));
                         }
 
-                        xoffset /= 10;
-                        yoffset /= 10;
+                        xoffset *= 10;
+                        yoffset *= 10;
 
                         Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
 
                         sendMessage.setXoffset(TypeConversion.intToBytes(xoffset));
                         sendMessage.setYoffset(TypeConversion.intToBytes(yoffset));
-
                     }
 
                 } else {
@@ -549,8 +563,17 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                         }
                     });
                 }
-            }
 
+            } else {
+                if (trackingBox.getVisibility() == View.VISIBLE) {
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            trackingBox.setVisibility(View.GONE);
+                        }
+                    });
+                }
+            }
         }
     }
 }

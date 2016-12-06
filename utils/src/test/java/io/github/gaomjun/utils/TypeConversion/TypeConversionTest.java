@@ -18,9 +18,14 @@ public class TypeConversionTest {
 
     @Test
     public void intToBytes() throws Exception {
-        byte[] bytes = TypeConversion.intToBytes(1000);
+        byte[] bytes = TypeConversion.intToBytes(220);
+        String hexString = HEXString.bytes2HexString(bytes);
 
         byte[] shouldBytes = new byte[] {(byte) 0x00, (byte) 0x00, (byte)0x03, (byte)0xE8};
+        String s = HEXString.bytes2HexString(shouldBytes);
+
+        String intHexString = "fa000000";
+        byte[] bytes1 = HEXString.hexString2Bytes(intHexString);
 
         assertArrayEquals(bytes, shouldBytes);
     }

@@ -67,6 +67,7 @@ public class BLEDriven {
                     bluetoothGatt.discoverServices();
                     break;
                 case BluetoothProfile.STATE_DISCONNECTED:
+                    connectingStatusCallback.onConnecting(DISCONNECTED);
                     connectedToDevice = false;
                     break;
             }

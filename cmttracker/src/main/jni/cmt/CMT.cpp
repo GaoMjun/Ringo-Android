@@ -114,7 +114,7 @@ uint64_t ticks_ms()
 
         CMT::CMT()
         {
-            detectorType = "Feature2D.BRISK";
+            detectorType = "Feature2D.FAST";
             descriptorType = "Feature2D.BRISK";
             matcherType = "BruteForce-Hamming";
             thrOutlier = 20;

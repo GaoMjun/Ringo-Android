@@ -1,4 +1,4 @@
-package io.github.gaomjun.blecommunication.BLECommunication;
+package io.github.gaomjun.utils.TypeConversion;
 
 import java.util.Locale;
 

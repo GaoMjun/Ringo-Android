@@ -1,11 +1,9 @@
 package io.github.gaomjun.blecommunication.BLECommunication.Message;
 
-import android.util.Log;
-
 import org.junit.Before;
 import org.junit.Test;
 
-import io.github.gaomjun.blecommunication.BLECommunication.HEXString;
+import io.github.gaomjun.utils.TypeConversion.HEXString;
 
 import static org.junit.Assert.*;
 
