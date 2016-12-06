@@ -289,10 +289,12 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
             if (Arrays.equals(recvMessage.getCommand(), GimbalMobileBLEProtocol.REMOTECOMMAND_CAPTURE)) {
                 //TODO
                 //capture action
+                Log.d("onRecvData", "capture action");
                 sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_CAPTRUE_OK);
             } else if (Arrays.equals(recvMessage.getCommand(), GimbalMobileBLEProtocol.REMOTECOMMAND_RECORD)) {
                 //TODO
                 //record action
+                Log.d("onRecvData", "record action");
                 sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_RECORD_OK);
             } else if (Arrays.equals(recvMessage.getCommand(), GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR)){
                 sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMADNBACK_CLEAR);
@@ -312,6 +314,13 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
             } else {
                 // disable tracking
                 canTracking = false;
+                sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_OFF);
+                MainActivity.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        findViewById(R.id.iv_tracking_status).setSelected(false);
+                    }
+                });
             }
         }
     }
