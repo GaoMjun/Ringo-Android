@@ -7,6 +7,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -47,7 +48,7 @@ public class BluetoothDevicesListAdapter extends RecyclerView.Adapter
         if (cell.isConnected()) {
             holder.deviceConnectedImage.setVisibility(View.VISIBLE);
         } else {
-            holder.deviceConnectedImage.setVisibility(View.INVISIBLE);
+            holder.deviceConnectedImage.setVisibility(View.GONE);
         }
         holder.deviceName.setText(cell.getBluetoothDeviceName());
     }
@@ -75,7 +76,9 @@ public class BluetoothDevicesListAdapter extends RecyclerView.Adapter
 
         @Override
         public void onClick(View v) {
-            cellClickCallback.cellOnClick(getAdapterPosition());
+            ProgressBar progressBar_connecting_ble_device =
+                    (ProgressBar) v.findViewById(R.id.progressBar_connecting_ble_device);
+            cellClickCallback.cellOnClick(progressBar_connecting_ble_device, getAdapterPosition());
         }
     }
 
@@ -86,6 +89,6 @@ public class BluetoothDevicesListAdapter extends RecyclerView.Adapter
     }
 
     public interface CellClickCallback {
-        void cellOnClick(int position);
+        void cellOnClick(ProgressBar progressBar_connecting_ble_device, int position);
     }
 }

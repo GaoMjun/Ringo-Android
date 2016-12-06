@@ -20,6 +20,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.opencv.core.Mat;
@@ -175,10 +176,11 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
             }
         }
     };
+    private ProgressBar progressBar_connecting_ble_device;
     private BluetoothDevicesListAdapter.CellClickCallback cellOnClickListener =
             new BluetoothDevicesListAdapter.CellClickCallback() {
         @Override
-        public void cellOnClick(int position) {
+        public void cellOnClick(ProgressBar progressBar_connecting_ble_device, int position) {
             Log.d("cellOnClick", "" + position);
 
             if (bluetoothDevice != null) {
@@ -192,6 +194,8 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
             bluetoothDevice = bluetoothDeviceList.get(position);
             Log.d("connectToDevice", bluetoothDevice.getName());
             bleDriven.connectToDevice(bluetoothDevice.getAddress());
+            MainActivity.this.progressBar_connecting_ble_device = progressBar_connecting_ble_device;
+            progressBar_connecting_ble_device.setVisibility(View.VISIBLE);
         }
     };
     private boolean canTracking = false;
@@ -320,6 +324,13 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                 case BLEDriven.CONNECTED:
                     Log.d("onConnecting", "CONNECTED");
                     connectedToDevice = true;
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            progressBar_connecting_ble_device.setVisibility(View.GONE);
+                        }
+                    });
+
                     datasourceChanged(bluetoothDeviceList, bluetoothDevice);
                     break;
                 case BLEDriven.CONNECTING:

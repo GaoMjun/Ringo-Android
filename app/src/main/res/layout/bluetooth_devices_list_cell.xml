@@ -24,7 +24,8 @@
         android:layout_centerVertical="true"
         android:layout_alignParentRight="true"
         android:tint="@color/white"
-        android:src="@drawable/bluetooth_device_connected_image"/>
+        android:src="@drawable/bluetooth_device_connected_image"
+        android:visibility="gone"/>
 
 
     <View
@@ -32,5 +33,14 @@
         android:layout_height="0.5dp"
         android:background="@color/white"
         android:layout_alignParentBottom="true"/>
+
+    <ProgressBar
+        android:id="@+id/progressBar_connecting_ble_device"
+        style="?android:attr/progressBarStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:visibility="gone"/>
 
 </RelativeLayout>
