@@ -10,6 +10,8 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        renderscriptTargetApi 24
+        renderscriptSupportModeEnabled true
     }
     buildTypes {
         release {
@@ -33,4 +35,5 @@ dependencies {
     compile project(':YoYoAnimation')
     compile 'com.nineoldandroids:library:2.4.0'
     compile 'com.daimajia.easing:library:1.0.2@aar'
+    compile 'com.eightbitlab:blurview:1.2.0'
 }

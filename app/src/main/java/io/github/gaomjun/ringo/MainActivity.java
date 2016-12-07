@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
@@ -23,6 +24,9 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.daimajia.androidanimations.library.Techniques;
+import com.daimajia.androidanimations.library.YoYo;
+
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.imgproc.Imgproc;
@@ -35,6 +39,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import eightbitlab.com.blurview.BlurView;
+import eightbitlab.com.blurview.RenderScriptBlur;
 import io.github.gaomjun.blecommunication.BLECommunication.BLEDriven;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.GimbalMobileBLEProtocol;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.RecvMessage;
@@ -112,6 +118,9 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
 
                     break;
                 case R.id.iv_switch_camera:
+//                    YoYo.with(Techniques.FlipInY)
+//                            .duration(500)
+//                            .playOn(cameraView);
                     cameraEngine.switchCamera();
                     break;
                 case R.id.bluetooth_devices_list_close:
