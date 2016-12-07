@@ -30,4 +30,7 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:25.0.1'
     compile project(':blecommunication')
     compile project(':utils')
+    compile project(':YoYoAnimation')
+    compile 'com.nineoldandroids:library:2.4.0'
+    compile 'com.daimajia.easing:library:1.0.2@aar'
 }
