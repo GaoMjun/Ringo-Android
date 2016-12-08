@@ -94,9 +94,11 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                         Integer tag = (Integer) imageView.getTag();
 
                         if ((tag == null) || tag == R.drawable.iv_capture) {
+                            //TODO animation
                             cameraEngine.takePicture(new Camera.PictureCallback() {
                                 @Override
                                 public void onPictureTaken(byte[] data, Camera camera) {
+                                    Log.d("onPictureTaken", "takePicture");
                                     cameraEngine.startPreview();
                                     if (data != null) {
                                         savePhotoToAlbum(data);
@@ -118,9 +120,7 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
 
                     break;
                 case R.id.iv_switch_camera:
-//                    YoYo.with(Techniques.FlipInY)
-//                            .duration(500)
-//                            .playOn(cameraView);
+                    //TODO animation
                     cameraEngine.switchCamera();
                     break;
                 case R.id.bluetooth_devices_list_close:
@@ -213,8 +213,10 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
     private void savePhotoToAlbum(byte[] data) {
         Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
         if (bitmap != null) {
-            File file = new File(Environment.getExternalStorageDirectory() + "/" +
-                    Environment.DIRECTORY_DCIM + "/", System.currentTimeMillis() + ".jpg");
+            String ringoDirectory = ringoDirectory();
+            if (ringoDirectory == null) return;
+
+            File file = new File(ringoDirectory + "/", System.currentTimeMillis() + ".jpg");
             try {
                 FileOutputStream fileOutputStream = new FileOutputStream(file);
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
@@ -222,13 +224,34 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                 fileOutputStream.flush();
                 fileOutputStream.close();
 
-                Log.d("onPictureTaken", "take picture success");
+                Log.d("onPictureTaken", "take picture success " + file.toString());
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    private String ringoDirectory() {
+        File ringoDirectory = new File(Environment.getExternalStorageDirectory() + "/" +
+                Environment.DIRECTORY_DCIM + "/", "Ringo");
+        if (!ringoDirectory.exists()) {
+            if (!ringoDirectory.mkdir()) {
+                Log.w("ringoDirectory", "Ringo mkdir error");
+                return null;
+
+            } else {
+                return ringoDirectory.getAbsolutePath();
+            }
+        }
+
+        if (!ringoDirectory.isDirectory()) {
+            Log.w("ringoDirectory", "Ringo is not directory");
+            return null;
+        }
+
+        return ringoDirectory.getAbsolutePath();
     }
 
     private View.OnTouchListener onTouchListener = new View.OnTouchListener() {

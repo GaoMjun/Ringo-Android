@@ -133,12 +133,16 @@ public class CameraEngine {
         }
     }
 
+    public static void startRecord() {
+
+    }
+
+    public static void stopRecord() {
+
+    }
+
     private static void setDefaultParameters() {
         Camera.Parameters parameters = camera.getParameters();
-
-        if (parameters.getSupportedFocusModes().contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-        }
 
         Camera.Size previewSize = getLargePreviewSize();
         previewWidth = previewSize.width;
@@ -150,6 +154,8 @@ public class CameraEngine {
         parameters.setPictureSize(pictureSize.width, pictureSize.height);
 
         parameters.setRotation(90);
+
+        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
 
         camera.setParameters(parameters);
     }
