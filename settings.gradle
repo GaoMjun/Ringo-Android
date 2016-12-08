@@ -1,1 +1,1 @@
-include ':app', ':cameraengine', ':openCVLibrary310', ':cvcamera', ':cmttracker', ':testapp', ':blecommunication', ':utils', ':YoYoAnimation'
+include ':app', ':cameraengine', ':openCVLibrary310', ':cvcamera', ':cmttracker', ':testapp', ':blecommunication', ':utils', ':YoYoAnimation', ':easypermissions'

@@ -4,6 +4,7 @@ import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.media.MediaRecorder;
 import android.util.Log;
 
 import java.io.IOException;
@@ -20,9 +21,28 @@ public class CameraEngine {
     public static int previewWidth;
     public static int previewHeight;
     public static Camera.PreviewCallback previewCallback;
+    private MediaRecorder mediaRecorder;
 
     private CameraEngine() {
+    }
 
+    private void initRecorder(String moviePath) {
+        mediaRecorder = new MediaRecorder();
+
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+
+        mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        mediaRecorder.setOutputFile(moviePath);
+
+        try {
+            mediaRecorder.prepare();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static CameraEngine getInstance() {
@@ -67,12 +87,17 @@ public class CameraEngine {
         return false;
     }
 
-    public static void releaseCamera() {
+    public void releaseCamera() {
         if (camera != null) {
             camera.setPreviewCallback(null);
             camera.stopPreview();
             camera.release();
             camera = null;
+        }
+
+        if (mediaRecorder != null) {
+            mediaRecorder.release();
+            mediaRecorder = null;
         }
     }
 
@@ -91,7 +116,7 @@ public class CameraEngine {
         return null;
     }
 
-    public static void switchCamera() {
+    public void switchCamera() {
         releaseCamera();
         cameraId = cameraId == 0 ? 1 : 0;
         openCamera(cameraId);
@@ -133,12 +158,17 @@ public class CameraEngine {
         }
     }
 
-    public static void startRecord() {
+    public void startRecord(String moviePath) {
+        initRecorder(moviePath);
 
+        mediaRecorder.start();
     }
 
-    public static void stopRecord() {
+    public void stopRecord() {
+        mediaRecorder.stop();
 
+        mediaRecorder.release();
+        mediaRecorder = null;
     }
 
     private static void setDefaultParameters() {

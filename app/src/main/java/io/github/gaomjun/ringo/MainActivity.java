@@ -2,17 +2,15 @@ package io.github.gaomjun.ringo;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
-import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -22,10 +20,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.Toast;
-
-import com.daimajia.androidanimations.library.Techniques;
-import com.daimajia.androidanimations.library.YoYo;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -39,8 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import eightbitlab.com.blurview.BlurView;
-import eightbitlab.com.blurview.RenderScriptBlur;
 import io.github.gaomjun.blecommunication.BLECommunication.BLEDriven;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.GimbalMobileBLEProtocol;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.RecvMessage;
@@ -49,11 +41,10 @@ import io.github.gaomjun.cameraengine.CameraEngine;
 import io.github.gaomjun.cmttracker.CMTTracker;
 import io.github.gaomjun.cvcamera.CVCamera;
 import io.github.gaomjun.ringo.BluetoothDevicesList.Adapter.BluetoothDevicesListAdapter;
-import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListCell;
 import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListDataSource;
 import io.github.gaomjun.utils.TypeConversion.TypeConversion;
 
-public class MainActivity extends Activity implements CVCamera.FrameCallback {
+public class MainActivity extends AppCompatActivity implements CVCamera.FrameCallback {
     private BLEDriven bleDriven = null;
     private SendMessage sendMessage = SendMessage.getInstance();
 
@@ -109,6 +100,7 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                         } else {
                             if (!isRecrding) {
                                 // start record
+                                startRecord();
                                 imageView.setSelected(!imageView.isSelected());
                             } else {
                                 isRecrding = true;
@@ -185,6 +177,15 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
             }
         }
     };
+
+    private void startRecord() {
+        String ringoDirectory = ringoDirectory();
+        if (ringoDirectory == null) return;
+
+        String moviePath = ringoDirectory + "/" +System.currentTimeMillis() + ".mp4";
+        cameraEngine.startRecord(moviePath);
+    }
+
     private ProgressBar progressBar_connecting_ble_device;
     private BluetoothDevicesListAdapter.CellClickCallback cellOnClickListener =
             new BluetoothDevicesListAdapter.CellClickCallback() {
@@ -238,6 +239,7 @@ public class MainActivity extends Activity implements CVCamera.FrameCallback {
                 Environment.DIRECTORY_DCIM + "/", "Ringo");
         if (!ringoDirectory.exists()) {
             if (!ringoDirectory.mkdir()) {
+                //TODO
                 Log.w("ringoDirectory", "Ringo mkdir error");
                 return null;
 

@@ -36,4 +36,5 @@ dependencies {
     compile 'com.nineoldandroids:library:2.4.0'
     compile 'com.daimajia.easing:library:1.0.2@aar'
     compile 'com.eightbitlab:blurview:1.2.0'
+    compile project(':easypermissions')
 }
