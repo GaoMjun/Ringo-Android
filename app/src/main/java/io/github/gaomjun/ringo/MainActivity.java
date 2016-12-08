@@ -86,25 +86,18 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
                         if ((tag == null) || tag == R.drawable.iv_capture) {
                             //TODO animation
-                            cameraEngine.takePicture(new Camera.PictureCallback() {
-                                @Override
-                                public void onPictureTaken(byte[] data, Camera camera) {
-                                    Log.d("onPictureTaken", "takePicture");
-                                    cameraEngine.startPreview();
-                                    if (data != null) {
-                                        savePhotoToAlbum(data);
-                                    }
-                                }
-                            });
+                            takePicture();
 
                         } else {
                             if (!isRecrding) {
                                 // start record
                                 startRecord();
+                                isRecrding = true;
                                 imageView.setSelected(!imageView.isSelected());
                             } else {
-                                isRecrding = true;
                                 // stop record
+                                stopRecord();
+                                isRecrding = false;
                                 imageView.setSelected(!imageView.isSelected());
                             }
                         }
@@ -177,6 +170,23 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             }
         }
     };
+
+    private void takePicture() {
+        cameraEngine.takePicture(new Camera.PictureCallback() {
+            @Override
+            public void onPictureTaken(byte[] data, Camera camera) {
+                Log.d("onPictureTaken", "takePicture");
+                cameraEngine.startPreview();
+                if (data != null) {
+                    savePhotoToAlbum(data);
+                }
+            }
+        });
+    }
+
+    private void stopRecord() {
+        cameraEngine.stopRecord();
+    }
 
     private void startRecord() {
         String ringoDirectory = ringoDirectory();
@@ -457,25 +467,29 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         if (!cameraView.isAvailable()) {
             cameraView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
                 @Override
-                public void onSurfaceTextureAvailable(
-                        SurfaceTexture surfaceTexture, int width, int height) {
+                public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture,
+                                                      int width, int height) {
+                    Log.d("SurfaceTextureListener", "onSurfaceTextureAvailable");
                     cameraEngine.openCamera();
                     cameraEngine.startPreview(surfaceTexture);
                 }
 
                 @Override
-                public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+                public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture,
+                                                        int width, int height) {
+                    Log.d("SurfaceTextureListener", "onSurfaceTextureSizeChanged");
 
                 }
 
                 @Override
                 public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+                    Log.d("SurfaceTextureListener", "onSurfaceTextureDestroyed");
                     return false;
                 }
 
                 @Override
                 public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-
+//                    Log.d("SurfaceTextureListener", "onSurfaceTextureUpdated");
                 }
             });
         } else {
@@ -532,6 +546,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     @Override
     public void processingFrame(Mat mat) {
+        Log.d("processingFrame", "processingFrame");
         trackingThreadHandler.post(new TrackingRunnable(mat));
     }
 

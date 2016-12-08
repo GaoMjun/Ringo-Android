@@ -4,8 +4,11 @@ import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.util.Log;
+import android.view.Surface;
+import android.view.TextureView;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,23 +23,47 @@ public class CameraEngine {
     private static SurfaceTexture surfaceTexture;
     public static int previewWidth;
     public static int previewHeight;
-    public static Camera.PreviewCallback previewCallback;
+    private static Camera.PreviewCallback previewCallback;
     private MediaRecorder mediaRecorder;
+    private MediaRecorder.OnInfoListener mediaRecorderInfoListener =
+            new MediaRecorder.OnInfoListener() {
+        @Override
+        public void onInfo(MediaRecorder mr, int what, int extra) {
+            Log.d("onInfo", "what" + what + " " + "extra" + extra);
+        }
+    };
+    private MediaRecorder.OnErrorListener mediaRecorderErrorListener =
+            new MediaRecorder.OnErrorListener() {
+        @Override
+        public void onError(MediaRecorder mr, int what, int extra) {
+            Log.d("onError", "what" + what + " " + "extra" + extra);
+        }
+    };
 
     private CameraEngine() {
+    }
+
+    public void setPreviewCallback(Camera.PreviewCallback previewCallback) {
+        CameraEngine.previewCallback = previewCallback;
     }
 
     private void initRecorder(String moviePath) {
         mediaRecorder = new MediaRecorder();
 
-        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        camera.unlock();
+        mediaRecorder.setCamera(camera);
 
         mediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-        mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        CamcorderProfile camcorderProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_720P);
+
+        mediaRecorder.setProfile(camcorderProfile);
+
         mediaRecorder.setOutputFile(moviePath);
+
+        mediaRecorder.setOnErrorListener(mediaRecorderErrorListener);
+        mediaRecorder.setOnInfoListener(mediaRecorderInfoListener);
 
         try {
             mediaRecorder.prepare();
@@ -162,6 +189,7 @@ public class CameraEngine {
         initRecorder(moviePath);
 
         mediaRecorder.start();
+        camera.setPreviewCallback(previewCallback);
     }
 
     public void stopRecord() {

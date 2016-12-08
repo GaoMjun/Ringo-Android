@@ -20,20 +20,23 @@ public class CVCamera {
     public CameraEngine cameraEngine = CameraEngine.getInstance();
     public FrameCallback delegate;
 
+    private Camera.PreviewCallback cameraPreviewCallback  = new Camera.PreviewCallback() {
+        @Override
+        public void onPreviewFrame(byte[] data, Camera camera) {
+            Mat mat = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
+            mat.put(0, 0, data);
+            delegate.processingFrame(mat);
+        }
+    };
+
     private LoaderCallbackInterface mLoaderCallback = new LoaderCallbackInterface() {
         @Override
         public void onManagerConnected(int status) {
             switch (status) {
                 case LoaderCallbackInterface.SUCCESS:
                     Log.d("onManagerConnected", "OpenCV loaded successfully");
-                    cameraEngine.previewCallback = new Camera.PreviewCallback() {
-                        @Override
-                        public void onPreviewFrame(byte[] data, Camera camera) {
-                            Mat mat = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
-                            mat.put(0, 0, data);
-                            delegate.processingFrame(mat);
-                        }
-                    };
+                    cameraEngine.setPreviewCallback(cameraPreviewCallback);
+
                     break;
                 default:
                     break;
