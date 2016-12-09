@@ -219,7 +219,6 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         }
     };
     private boolean canTracking = false;
-    private boolean connectedToDevice = false;
 
     private void savePhotoToAlbum(byte[] data) {
         Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
@@ -330,39 +329,55 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         public void onRecvData(RecvMessage recvMessage) {
             Log.d("recv", recvMessage.getMessageHexString());
 
-            if (Arrays.equals(recvMessage.getCommand(), GimbalMobileBLEProtocol.REMOTECOMMAND_CAPTURE)) {
+            byte[] command = recvMessage.getCommand();
+
+            if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_CAPTURE)) {
                 //TODO
                 //capture action
                 Log.d("onRecvData", "capture action");
                 sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_CAPTRUE_OK);
-            } else if (Arrays.equals(recvMessage.getCommand(), GimbalMobileBLEProtocol.REMOTECOMMAND_RECORD)) {
+
+            } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_RECORD)) {
                 //TODO
                 //record action
                 Log.d("onRecvData", "record action");
                 sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_RECORD_OK);
-            } else if (Arrays.equals(recvMessage.getCommand(), GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR)){
+
+            } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR)){
                 sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMADNBACK_CLEAR);
             }
 
-            if (Arrays.equals(recvMessage.getGimbalStatus(), GimbalMobileBLEProtocol.GIMBALSTATUS_RUN)) {
+            byte[] gimbalStatus = recvMessage.getGimbalStatus();
+
+            if (Arrays.equals(gimbalStatus, GimbalMobileBLEProtocol.GIMBALSTATUS_RUN)) {
                 // enable switch tracking status button
-                findViewById(R.id.iv_tracking_status).setEnabled(true);
+                if (!findViewById(R.id.iv_tracking_status).isEnabled())
+                    findViewById(R.id.iv_tracking_status).setEnabled(true);
             } else {
                 // diable switch tracking status button
-                findViewById(R.id.iv_tracking_status).setEnabled(false);
+                if (findViewById(R.id.iv_tracking_status).isEnabled()) {
+
+                    MainActivity.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            findViewById(R.id.iv_tracking_status).performClick();
+                        }
+                    });
+                }
             }
 
-            if (Arrays.equals(recvMessage.getGimbalMode(), GimbalMobileBLEProtocol.GIMBALMODE_FACEFOLLOW)) {
+            byte[] gimbalMode = recvMessage.getGimbalMode();
+
+            if (Arrays.equals(gimbalMode, GimbalMobileBLEProtocol.GIMBALMODE_FACEFOLLOW)) {
                 // can tracking
                 canTracking = true;
             } else {
-                // disable tracking
-                canTracking = false;
-                sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_OFF);
                 MainActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        findViewById(R.id.iv_tracking_status).setSelected(false);
+                        if (findViewById(R.id.iv_tracking_status).isSelected()) {
+                            findViewById(R.id.iv_tracking_status).performClick();
+                        }
                     }
                 });
             }
@@ -376,11 +391,11 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             switch (status) {
                 case BLEDriven.CONNECTED:
                     Log.d("onConnecting", "CONNECTED");
-                    connectedToDevice = true;
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             progressBar_connecting_ble_device.setVisibility(View.GONE);
+                            findViewById(R.id.iv_tracking_status).setEnabled(true);
                         }
                     });
 
@@ -397,11 +412,11 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     datasourceChanged(bluetoothDeviceList, bluetoothDevice);
                     break;
                 case BLEDriven.CONNECTING:
-                    connectedToDevice = false;
                     Log.d("onConnecting", "CONNECTING");
+                    findViewById(R.id.iv_tracking_status).setEnabled(false);
                     break;
                 case BLEDriven.DISCONNECTED:
-                    connectedToDevice = false;
+                    findViewById(R.id.iv_tracking_status).setEnabled(false);
 //                    bluetoothDevice = null;
 //                    datasourceChanged(bluetoothDeviceList, bluetoothDevice);
                     Log.d("onConnecting", "DISCONNECTED");
@@ -531,6 +546,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         findViewById(R.id.iv_ble).setOnClickListener(btn_listener);
         findViewById(R.id.iv_album).setOnClickListener(btn_listener);
         findViewById(R.id.bluetooth_devices_list_close).setOnClickListener(btn_listener);
+
+        findViewById(R.id.iv_tracking_status).setEnabled(false);
 
         testImageView = (ImageView) findViewById(R.id.testImageView);
 
