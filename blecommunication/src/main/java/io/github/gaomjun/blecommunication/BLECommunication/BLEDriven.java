@@ -321,7 +321,7 @@ public class BLEDriven {
                 if (connectedToDevice) {
                     byte[] message = sendMessage.getMessage();
                     write(message);
-                    Log.d("send", sendMessage.getMessageHexString());
+//                    Log.d("send", sendMessage.getMessageHexString());
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {

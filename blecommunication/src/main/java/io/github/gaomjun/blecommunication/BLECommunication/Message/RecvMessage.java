@@ -25,8 +25,6 @@ public class RecvMessage extends Message {
     private byte[] offset = new byte[5];
     private byte[] crc = new byte[2];
 
-    private byte[] preCommand = new byte[1];
-
     public void setMessage(byte[] message) {
         this.message = message;
 
@@ -52,22 +50,17 @@ public class RecvMessage extends Message {
     }
 
     public byte[] getCommand() {
-        byte[] cmd = {(byte) 0x00};
+        byte[] cmd;
 
         if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_CAPTURE)) {
-            if (Arrays.equals(preCommand, GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR)) {
-                cmd = GimbalMobileBLEProtocol.REMOTECOMMAND_CAPTURE;
-            }
+            cmd = GimbalMobileBLEProtocol.REMOTECOMMAND_CAPTURE;
 
         } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_RECORD)) {
-            if (Arrays.equals(preCommand, GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR)) {
-                cmd = GimbalMobileBLEProtocol.REMOTECOMMAND_RECORD;
-            }
+            cmd = GimbalMobileBLEProtocol.REMOTECOMMAND_RECORD;
+
         } else {
             cmd = GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR;
         }
-
-        preCommand = command;
 
         return cmd;
     }

@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -20,6 +21,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -92,11 +94,25 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                             if (!isRecrding) {
                                 // start record
                                 startRecord();
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this,
+                                                "start record", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                                 isRecrding = true;
                                 imageView.setSelected(!imageView.isSelected());
                             } else {
                                 // stop record
                                 stopRecord();
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this,
+                                                "stop record", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                                 isRecrding = false;
                                 imageView.setSelected(!imageView.isSelected());
                             }
@@ -127,10 +143,10 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     ImageView iv_tracking_status = (ImageView) findViewById(R.id.iv_tracking_status);
                     iv_tracking_status.setSelected(!iv_tracking_status.isSelected());
                     if (iv_tracking_status.isSelected()) {
-                        Log.d("iv_tracking_status", "selected");
+//                        Log.d("iv_tracking_status", "selected");
                         sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_ON);
                     } else {
-                        Log.d("iv_tracking_status", "no selected");
+//                        Log.d("iv_tracking_status", "no selected");
                         sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_OFF);
                         sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
                         canTrackerInit = false;
@@ -170,6 +186,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             }
         }
     };
+    private boolean canCapture = true;
+    private boolean canRecord = true;
 
     private void takePicture() {
         cameraEngine.takePicture(new Camera.PictureCallback() {
@@ -235,6 +253,13 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 fileOutputStream.close();
 
                 Log.d("onPictureTaken", "take picture success " + file.toString());
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "take picture success",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -271,7 +296,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             if (canTracking == false) return true;
 
             final Point point = new Point(event.getX(), event.getY());
-            Log.d("OnTouch", point.toString());
+//            Log.d("OnTouch", point.toString());
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     startPoint.x = point.x;
@@ -280,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     trackingBoxUtils.setX((int) startPoint.x, 0);
                     trackingBoxUtils.setY((int) startPoint.y, 0);
 
-                    Log.d("MotionEvent", "touch start" + startPoint.toString());
+//                    Log.d("MotionEvent", "touch start" + startPoint.toString());
 
                     {
                         canTrackerInit = false;
@@ -296,7 +321,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     trackingBoxUtils.setWidth((int) Math.abs(startPoint.x - endPoint.x), 0);
                     trackingBoxUtils.setHeight((int) Math.abs(startPoint.y - endPoint.y), 0);
 
-                    Log.d("MotionEvent", "touch move" + endPoint.toString());
+//                    Log.d("MotionEvent", "touch move" + endPoint.toString());
                     break;
                 case MotionEvent.ACTION_UP:
                     endPoint.x = point.x;
@@ -314,7 +339,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     }
                     trackingBoxUtils.setRect(0, 0, 0, 0, 0);
                     trackingBox.setVisibility(View.GONE);
-                    Log.d("MotionEvent", "touch end" + endPoint.toString());
+//                    Log.d("MotionEvent", "touch end" + endPoint.toString());
                     break;
             }
             return true;
@@ -327,21 +352,92 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
         @Override
         public void onRecvData(RecvMessage recvMessage) {
-            Log.d("recv", recvMessage.getMessageHexString());
+//            Log.d("recv", recvMessage.getMessageHexString());
 
             byte[] command = recvMessage.getCommand();
 
             if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_CAPTURE)) {
                 //TODO
                 //capture action
-                Log.d("onRecvData", "capture action");
-                sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_CAPTRUE_OK);
+                if (canCapture) {
+                    canCapture = false;
+                    // start capture
+                    Log.d("onRecvData", "capture action");
+                    {
+                        if (!isRecrding) {
+                            final ImageView switch_camera_mode =
+                                    (ImageView) findViewById(R.id.iv_switch_camera_mode);
+                            Integer tag = (Integer) switch_camera_mode.getTag();
+                            if ((tag != null) && (tag != R.drawable.camera_mode_photo)) {
+                                switch_camera_mode.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        switch_camera_mode.performClick();
+                                    }
+                                });
+                            }
+
+                            findViewById(R.id.iv_capture).post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    findViewById(R.id.iv_capture).performClick();
+                                }
+                            });
+                        } else {
+                            // while recording, can not capture
+                            MainActivity.this.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this,
+                                            "while recording, can not capture",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    }
+                    sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_CAPTRUE_OK);
+                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            canCapture = true;
+                        }
+                    }, 500);
+                }
 
             } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_RECORD)) {
                 //TODO
                 //record action
-                Log.d("onRecvData", "record action");
-                sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_RECORD_OK);
+                if (canRecord) {
+                    canRecord = false;
+                    Log.d("onRecvData", "record action");
+                    {
+                        final ImageView switch_camera_mode =
+                                (ImageView) findViewById(R.id.iv_switch_camera_mode);
+                        Integer tag = (Integer) switch_camera_mode.getTag();
+                        if ((tag == null) || (tag != R.drawable.camera_mode_video)) {
+                            switch_camera_mode.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    switch_camera_mode.performClick();
+                                }
+                            });
+                        }
+
+                        findViewById(R.id.iv_capture).post(new Runnable() {
+                            @Override
+                            public void run() {
+                                findViewById(R.id.iv_capture).performClick();
+                            }
+                        });
+                    }
+                    sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_RECORD_OK);
+                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            canRecord = true;
+                        }
+                    }, 500);
+                }
 
             } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR)){
                 sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMADNBACK_CLEAR);
@@ -408,7 +504,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                                         View.GONE);
                             }
                         }
-                    }, 1500);
+                    }, 1000);
                     datasourceChanged(bluetoothDeviceList, bluetoothDevice);
                     break;
                 case BLEDriven.CONNECTING:
@@ -573,7 +669,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     @Override
     public void processingFrame(Mat mat) {
-        Log.d("processingFrame", "processingFrame");
+//        Log.d("processingFrame", "processingFrame");
         trackingThreadHandler.post(new TrackingRunnable(mat));
     }
 
@@ -613,7 +709,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     final int width = rect[2];
                     final int height = rect[3];
 
-                    Log.d("CMTgetRect", p.toString() + " [" + width + "," + height + "]");
+//                    Log.d("CMTgetRect", p.toString() + " [" + width + "," + height + "]");
 
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
@@ -642,7 +738,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         xoffset *= 10;
                         yoffset *= 10;
 
-                        Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
+//                        Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
 
                         sendMessage.setXoffset(TypeConversion.intToBytes(xoffset));
                         sendMessage.setYoffset(TypeConversion.intToBytes(yoffset));

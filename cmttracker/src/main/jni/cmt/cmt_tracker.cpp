@@ -36,7 +36,7 @@ Java_io_github_gaomjun_cmttracker_CMTTracker_OpenCMT(JNIEnv *env, jclass thiz,
     CMTinitiated = false;
     if (cmt->initialise(im_gray, p1, p2)) {
         initTrackedPoints = cmt->activeKeypoints.size();
-        LOGD("initTrackingPoints %d", initTrackedPoints);
+//        LOGD("initTrackingPoints %d", initTrackedPoints);
         CMTinitiated = true;
     }
 }
@@ -83,7 +83,7 @@ Java_io_github_gaomjun_cmttracker_CMTTracker_CMTgetRect(JNIEnv *env, jclass thiz
 JNIEXPORT jboolean JNICALL
 Java_io_github_gaomjun_cmttracker_CMTTracker_CMTgetResult(JNIEnv *env, jclass type) {
     bool result = cmt->hasResult;
-    LOGD("initTrackingPoints %d %d", initTrackedPoints, cmt->trackedKeypoints.size());
+//    LOGD("initTrackingPoints %d %d", initTrackedPoints, cmt->trackedKeypoints.size());
     if (result && (cmt->trackedKeypoints.size() > (initTrackedPoints/2))) {
         return true;
     }
