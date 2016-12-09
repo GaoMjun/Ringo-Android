@@ -103,6 +103,12 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                                 });
                                 isRecrding = true;
                                 imageView.setSelected(!imageView.isSelected());
+                                {
+                                    // disable some button
+                                    findViewById(R.id.iv_switch_camera_mode).setEnabled(false);
+                                    findViewById(R.id.iv_switch_camera).setEnabled(false);
+                                    findViewById(R.id.iv_album).setEnabled(false);
+                                }
                             } else {
                                 // stop record
                                 stopRecord();
@@ -115,6 +121,12 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                                 });
                                 isRecrding = false;
                                 imageView.setSelected(!imageView.isSelected());
+                                {
+                                    // enable disabled button
+                                    findViewById(R.id.iv_switch_camera_mode).setEnabled(true);
+                                    findViewById(R.id.iv_switch_camera).setEnabled(true);
+                                    findViewById(R.id.iv_album).setEnabled(true);
+                                }
                             }
                         }
                     }
