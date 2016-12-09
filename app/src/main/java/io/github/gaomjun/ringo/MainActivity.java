@@ -384,6 +384,16 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         }
                     });
 
+                    findViewById(R.id.bluetooth_devices_list_view).postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (findViewById(R.id.bluetooth_devices_list_view).getVisibility() !=
+                                    View.GONE) {
+                                findViewById(R.id.bluetooth_devices_list_view).setVisibility(
+                                        View.GONE);
+                            }
+                        }
+                    }, 1500);
                     datasourceChanged(bluetoothDeviceList, bluetoothDevice);
                     break;
                 case BLEDriven.CONNECTING:
