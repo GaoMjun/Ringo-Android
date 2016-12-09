@@ -589,6 +589,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         cvCamera = new CVCamera();
         cvCamera.delegate = MainActivity.this;
         cameraEngine = cvCamera.cameraEngine;
+        cameraEngine.context = MainActivity.this;
     }
 
     private void hidenNavigationBar() {

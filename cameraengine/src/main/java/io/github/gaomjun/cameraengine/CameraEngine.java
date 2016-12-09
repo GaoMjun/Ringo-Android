@@ -1,9 +1,11 @@
 package io.github.gaomjun.cameraengine;
 
+import android.content.Context;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.media.AudioManager;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.util.Log;
@@ -18,12 +20,20 @@ import java.util.List;
  */
 
 public class CameraEngine {
+    public static Context context;
     private volatile static CameraEngine instance = null;
     private static int cameraId = 0;
     private static SurfaceTexture surfaceTexture;
     public static int previewWidth;
     public static int previewHeight;
     private static Camera.PreviewCallback previewCallback;
+    private static Camera.ShutterCallback shutterCallback = new Camera.ShutterCallback() {
+        @Override
+        public void onShutter() {
+            AudioManager mgr = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            mgr.playSoundEffect(AudioManager.FLAG_PLAY_SOUND);
+        }
+    };
     private MediaRecorder mediaRecorder;
     private MediaRecorder.OnInfoListener mediaRecorderInfoListener =
             new MediaRecorder.OnInfoListener() {
@@ -181,7 +191,7 @@ public class CameraEngine {
 
     public static void takePicture(Camera.PictureCallback jpegCallback) {
         if (camera != null) {
-            camera.takePicture(null, null, jpegCallback);
+            camera.takePicture(shutterCallback, null, jpegCallback);
         }
     }
 
@@ -214,6 +224,8 @@ public class CameraEngine {
         parameters.setRotation(90);
 
         parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+
+        camera.enableShutterSound(true);
 
         camera.setParameters(parameters);
     }
