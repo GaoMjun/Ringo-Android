@@ -23,6 +23,9 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.daimajia.androidanimations.library.Techniques;
+import com.daimajia.androidanimations.library.YoYo;
+
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.imgproc.Imgproc;
@@ -87,7 +90,9 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         Integer tag = (Integer) imageView.getTag();
 
                         if ((tag == null) || tag == R.drawable.iv_capture) {
-                            //TODO animation
+                            YoYo.with(Techniques.Flash)
+                                    .duration(200)
+                                    .playOn(cameraView);
                             takePicture();
 
                         } else {
