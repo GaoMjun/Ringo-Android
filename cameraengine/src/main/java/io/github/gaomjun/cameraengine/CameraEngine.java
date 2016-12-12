@@ -20,6 +20,7 @@ import java.util.List;
  */
 
 public class CameraEngine {
+    private static final int RECORD_FINISH = 0;
     public static Context context;
     private volatile static CameraEngine instance = null;
     private static int cameraId = 0;
@@ -195,18 +196,30 @@ public class CameraEngine {
         }
     }
 
+    private String moviePath;
+
     public void startRecord(String moviePath) {
+        this.moviePath = moviePath;
         initRecorder(moviePath);
 
         mediaRecorder.start();
         camera.setPreviewCallback(previewCallback);
     }
 
-    public void stopRecord() {
+    public void stopRecord(RecordStatusCallback recordStatusCallback) {
+        this.recordStatusCallback = recordStatusCallback;
         mediaRecorder.stop();
 
         mediaRecorder.release();
         mediaRecorder = null;
+
+        recordStatusCallback.recordFinish(moviePath);
+    }
+
+    private RecordStatusCallback recordStatusCallback;
+
+    public interface RecordStatusCallback {
+        void recordFinish(String moviePath);
     }
 
     private static void setDefaultParameters() {
