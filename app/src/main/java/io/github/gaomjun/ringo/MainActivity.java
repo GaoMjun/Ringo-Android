@@ -2,10 +2,12 @@ package io.github.gaomjun.ringo;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -220,7 +222,15 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     }
 
     private void stopRecord() {
-        cameraEngine.stopRecord();
+        cameraEngine.stopRecord(new CameraEngine.RecordStatusCallback() {
+            @Override
+            public void recordFinish(String moviePath) {
+                Log.d("recordFinish", moviePath);
+                MainActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                        Uri.parse("file://" + moviePath)));
+
+            }
+        });
     }
 
     private void startRecord() {
@@ -270,6 +280,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 fileOutputStream.close();
 
                 Log.d("onPictureTaken", "take picture success " + file.toString());
+                this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                        Uri.parse("file://" + file.toString())));
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
