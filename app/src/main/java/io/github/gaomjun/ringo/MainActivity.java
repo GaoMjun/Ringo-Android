@@ -14,6 +14,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.StatFs;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -24,6 +25,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.daimajia.androidanimations.library.Techniques;
@@ -51,16 +53,18 @@ import io.github.gaomjun.cmttracker.CMTTracker;
 import io.github.gaomjun.cvcamera.CVCamera;
 import io.github.gaomjun.ringo.BluetoothDevicesList.Adapter.BluetoothDevicesListAdapter;
 import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListDataSource;
+import io.github.gaomjun.timelabel.TimeLabel;
 import io.github.gaomjun.utils.TypeConversion.TypeConversion;
 import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends AppCompatActivity implements CVCamera.FrameCallback,
         EasyPermissions.PermissionCallbacks {
+    private TimeLabel timeLabel = new TimeLabel();
     private BLEDriven bleDriven = null;
     private SendMessage sendMessage = SendMessage.getInstance();
 
     private RecyclerView bluetoothDevicesListRecyclerView;
-
+    private TextView recordTimeLabel;
     private BluetoothDevicesListAdapter bluetoothDevicesListAdapter;
     private BluetoothDevicesListDataSource bluetoothDevicesListDataSource =
             new BluetoothDevicesListDataSource();
@@ -104,22 +108,24 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         } else {
                             if (!isRecrding) {
                                 // start record
-                                startRecord();
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(MainActivity.this,
-                                                "start record", Toast.LENGTH_SHORT).show();
+                                if (startRecord()) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Toast.makeText(getApplicationContext(),
+                                                    "start record", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                    isRecrding = true;
+                                    imageView.setSelected(!imageView.isSelected());
+                                    {
+                                        // disable some button
+                                        findViewById(R.id.iv_switch_camera_mode).setEnabled(false);
+                                        findViewById(R.id.iv_switch_camera).setEnabled(false);
+                                        findViewById(R.id.iv_album).setEnabled(false);
                                     }
-                                });
-                                isRecrding = true;
-                                imageView.setSelected(!imageView.isSelected());
-                                {
-                                    // disable some button
-                                    findViewById(R.id.iv_switch_camera_mode).setEnabled(false);
-                                    findViewById(R.id.iv_switch_camera).setEnabled(false);
-                                    findViewById(R.id.iv_album).setEnabled(false);
                                 }
+
                             } else {
                                 // stop record
                                 stopRecord();
@@ -228,6 +234,9 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     }
 
     private void stopRecord() {
+        timeLabel.stop();
+        recordTimeLabel.setVisibility(View.GONE);
+
         cameraEngine.stopRecord(new CameraEngine.RecordStatusCallback() {
             @Override
             public void recordFinish(String moviePath) {
@@ -239,12 +248,53 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         });
     }
 
-    private void startRecord() {
+    private boolean startRecord() {
+        // check free space
+        final int seconds = (int) ((getFreeSpace() - 100) / 1.5);
+        final String maxTimeString = TimeLabel.secondsToTimeString(seconds);
+
+        if (seconds <= 3) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), "剩余空间不足", Toast.LENGTH_SHORT);
+                }
+            });
+            return false;
+        }
+
+        // start record timer
+        recordTimeLabel.setVisibility(View.VISIBLE);
+        timeLabel.setTimeChangedCallback(new TimeLabel.TimeChangedCallback() {
+            @Override
+            public void timeChanged(final String timeString) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        recordTimeLabel.setText(timeString + "|" + maxTimeString);
+                    }
+                });
+                if (maxTimeString.equals(timeString)) {
+                    stopRecord();
+
+                }
+            }
+        });
+        timeLabel.start();
+
         String ringoDirectory = ringoDirectory();
-        if (ringoDirectory == null) return;
+        if (ringoDirectory == null) return false;
 
         String moviePath = ringoDirectory + "/" +System.currentTimeMillis() + ".mp4";
         cameraEngine.startRecord(moviePath);
+
+        return true;
+    }
+
+    private long getFreeSpace() {
+        StatFs stat = new StatFs(Environment.getExternalStorageDirectory().getPath());
+        long bytesAvailable = stat.getAvailableBytes();
+        return bytesAvailable / 1048576;
     }
 
     private ProgressBar progressBar_connecting_ble_device;
@@ -713,6 +763,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         trackingBoxUtils = new ViewUtils(trackingBox);
 
         findViewById(R.id.activity_main).setOnTouchListener(onTouchListener);
+
+        recordTimeLabel = (TextView) findViewById(R.id.recordTimeLabel);
 
         initBluetoothDevicesList();
     }
