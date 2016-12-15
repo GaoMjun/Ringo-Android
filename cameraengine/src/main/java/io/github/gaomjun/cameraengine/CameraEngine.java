@@ -97,20 +97,18 @@ public class CameraEngine {
 
     private static Camera camera = null;
 
-    public static boolean openCamera() {
+    public void openCamera() {
         if (camera == null) {
             try {
                 camera = Camera.open(cameraId);
                 setDefaultParameters();
-                return true;
             } catch (RuntimeException e) {
                 e.printStackTrace();
             }
         }
-        return false;
     }
 
-    public static boolean openCamera(int Id) {
+    public boolean openCamera(int Id) {
         if (camera == null) {
             try {
                 camera = Camera.open(Id);
@@ -161,11 +159,15 @@ public class CameraEngine {
         startPreview(surfaceTexture);
     }
 
-    public static void startPreview(SurfaceTexture surfaceTexture) {
+    public void startPreview(SurfaceTexture surfaceTexture) {
         if (camera != null) {
             try {
                 camera.setPreviewTexture(surfaceTexture);
                 camera.setPreviewCallback(previewCallback);
+//                if (isFrontCamera()) {
+//                    camera.setDisplayOrientation(180);
+//                    setRotation(180);
+//                }
                 CameraEngine.surfaceTexture = surfaceTexture;
                 camera.startPreview();
             } catch (IOException e) {
@@ -222,24 +224,44 @@ public class CameraEngine {
         void recordFinish(String moviePath);
     }
 
-    private static void setDefaultParameters() {
+    private void setDefaultParameters() {
         Camera.Parameters parameters = camera.getParameters();
 
         Camera.Size previewSize = getLargePreviewSize();
         previewWidth = previewSize.width;
         previewHeight = previewSize.height;
         parameters.setPreviewSize(previewSize.width, previewSize.height);
-        parameters.setPreviewFormat(PixelFormat.RGB_888);
+//        parameters.setPreviewFormat(PixelFormat.RGB_888);
 
         Camera.Size pictureSize = getLargePictureSize();
         parameters.setPictureSize(pictureSize.width, pictureSize.height);
 
-        parameters.setRotation(90);
-
         parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
 
-        camera.enableShutterSound(true);
+//        camera.enableShutterSound(true);
 
+        setParameters(parameters);
+
+        if (isFrontCamera()) {
+            setFrontCameraParameters();
+            Log.d("setDefaultParameters", "front camera");
+        } else {
+            setBackCameraParameters();
+            Log.d("setDefaultParameters", "back camera");
+        }
+    }
+
+    private void setBackCameraParameters() {
+
+    }
+
+    private void setFrontCameraParameters() {
+
+    }
+
+    private void setRotation(int rotation) {
+        Camera.Parameters parameters = camera.getParameters();
+        parameters.setRotation(rotation);
         camera.setParameters(parameters);
     }
 

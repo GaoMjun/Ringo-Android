@@ -1,5 +1,6 @@
 package io.github.gaomjun.ringo;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
@@ -50,8 +51,10 @@ import io.github.gaomjun.cvcamera.CVCamera;
 import io.github.gaomjun.ringo.BluetoothDevicesList.Adapter.BluetoothDevicesListAdapter;
 import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListDataSource;
 import io.github.gaomjun.utils.TypeConversion.TypeConversion;
+import pub.devrel.easypermissions.EasyPermissions;
 
-public class MainActivity extends AppCompatActivity implements CVCamera.FrameCallback {
+public class MainActivity extends AppCompatActivity implements CVCamera.FrameCallback,
+        EasyPermissions.PermissionCallbacks {
     private BLEDriven bleDriven = null;
     private SendMessage sendMessage = SendMessage.getInstance();
 
@@ -207,6 +210,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     };
     private boolean canCapture = true;
     private boolean canRecord = true;
+    private boolean allPermissionGranted = false;
+    private SurfaceTexture surfaceTexture;
 
     private void takePicture() {
         cameraEngine.takePicture(new Camera.PictureCallback() {
@@ -376,6 +381,33 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     };
     private boolean canTrackerInit = false;
     private boolean startTracking = false;
+
+    @Override
+    public void onPermissionsGranted(int requestCode, List<String> perms) {
+
+    }
+
+    @Override
+    public void onPermissionsDenied(int requestCode, List<String> perms) {
+
+    }
+
+    private boolean checkPermission() {
+        String[] perms = { Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO };
+        if (EasyPermissions.hasPermissions(this, perms)) {
+            allPermissionGranted = true;
+            return true;
+        } else {
+            // Ask for both permissions
+            EasyPermissions.requestPermissions(this, "this app need these permission",
+                    124, perms);
+        }
+
+        return false;
+    }
 
     private class RecvDataListener implements BLEDriven.RecvCallback {
 
@@ -576,6 +608,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        checkPermission();
+
         initView();
         initCvCamera();
         initBLEDriven();
@@ -608,14 +642,17 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     protected void onResume() {
         super.onResume();
 
-        if (!cameraView.isAvailable()) {
+        if ((cameraView != null) && (!cameraView.isAvailable()) && (cameraEngine != null)) {
             cameraView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
                 @Override
                 public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture,
                                                       int width, int height) {
                     Log.d("SurfaceTextureListener", "onSurfaceTextureAvailable");
-                    cameraEngine.openCamera();
-                    cameraEngine.startPreview(surfaceTexture);
+                    MainActivity.this.surfaceTexture = surfaceTexture;
+                    if (allPermissionGranted) {
+                        cameraEngine.openCamera();
+                        cameraEngine.startPreview(surfaceTexture);
+                    }
                 }
 
                 @Override
@@ -633,17 +670,18 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
                 @Override
                 public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-//                    Log.d("SurfaceTextureListener", "onSurfaceTextureUpdated");
+
                 }
             });
-        } else {
-
         }
+
+
     }
 
     @Override
     protected void onStop() {
-        cameraEngine.releaseCamera();
+        if (cameraEngine != null)
+            cameraEngine.releaseCamera();
 
         super.onStop();
     }
@@ -692,7 +730,11 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     @Override
     public void processingFrame(Mat mat) {
 //        Log.d("processingFrame", "processingFrame");
-        trackingThreadHandler.post(new TrackingRunnable(mat));
+        if (trackingThreadHandler != null) {
+            trackingThreadHandler.post(new TrackingRunnable(mat));
+        } else {
+            initTracking();
+        }
     }
 
     private class TrackingRunnable implements Runnable {
