@@ -28,6 +28,7 @@ import android.widget.Toast;
 
 import com.daimajia.androidanimations.library.Techniques;
 import com.daimajia.androidanimations.library.YoYo;
+import com.tencent.bugly.crashreport.CrashReport;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -614,6 +615,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         initCvCamera();
         initBLEDriven();
         initTracking();
+
     }
 
     private void initBLEDriven() {
