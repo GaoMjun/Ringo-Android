@@ -251,7 +251,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private boolean startRecord() {
         // check free space
         final int seconds = (int) ((getFreeSpace() - 100) / 1.5);
-        final String maxTimeString = TimeLabel.secondsToTimeString(seconds);
+//        final String maxTimeString = TimeLabel.secondsToTimeString(seconds);
+        final String maxTimeString = "00:00:10";
 
         if (seconds <= 3) {
             runOnUiThread(new Runnable() {
@@ -275,8 +276,12 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     }
                 });
                 if (maxTimeString.equals(timeString)) {
-                    stopRecord();
-
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            findViewById(R.id.iv_capture).performClick();
+                        }
+                    });
                 }
             }
         });
