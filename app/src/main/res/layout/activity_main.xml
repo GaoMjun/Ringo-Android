@@ -157,7 +157,8 @@
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="20dp"
         android:text="00:11:03|00:30:00"
-        android:textSize="22sp"
+        android:textSize="20sp"
+        android:fontFamily="sans-serif-smallcaps"
         android:visibility="gone"/>
 
 </RelativeLayout>

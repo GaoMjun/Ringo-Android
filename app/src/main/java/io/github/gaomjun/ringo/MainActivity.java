@@ -2,6 +2,7 @@ package io.github.gaomjun.ringo;
 
 import android.Manifest;
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -15,6 +16,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.StatFs;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -59,6 +61,7 @@ import pub.devrel.easypermissions.EasyPermissions;
 
 public class MainActivity extends AppCompatActivity implements CVCamera.FrameCallback,
         EasyPermissions.PermissionCallbacks {
+    private static final int REQUEST_BLUETOOTH_ON_CODE = 11;
     private TimeLabel timeLabel = new TimeLabel();
     private BLEDriven bleDriven = null;
     private SendMessage sendMessage = SendMessage.getInstance();
@@ -158,6 +161,15 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     bleDriven.stopScanDevices();
                     break;
                 case R.id.iv_ble:
+                    // check bluetooth is available
+                    if (!bleDriven.bluetoothIsAvailable) {
+                        Log.d("R.id.iv_ble", "bluetooth is not available");
+                        //TODO request opening on bluetooth
+                        startActivityForResult(
+                                new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), REQUEST_BLUETOOTH_ON_CODE);
+                        return;
+                    }
+
                     if (findViewById(R.id.bluetooth_devices_list_view).getVisibility() == View.GONE) {
                         findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.VISIBLE);
                         datasourceChanged(new ArrayList<BluetoothDevice>(), bluetoothDevice);
@@ -251,8 +263,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private boolean startRecord() {
         // check free space
         final int seconds = (int) ((getFreeSpace() - 100) / 1.5);
-//        final String maxTimeString = TimeLabel.secondsToTimeString(seconds);
-        final String maxTimeString = "00:00:10";
+        final String maxTimeString = TimeLabel.secondsToTimeString(seconds);
 
         if (seconds <= 3) {
             runOnUiThread(new Runnable() {
@@ -358,6 +369,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         }
     }
 
+    @Nullable
     private String ringoDirectory() {
         File ringoDirectory = new File(Environment.getExternalStorageDirectory() + "/" +
                 Environment.DIRECTORY_DCIM + "/", "Ringo");
@@ -788,7 +800,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     @Override
     public void processingFrame(Mat mat) {
-//        Log.d("processingFrame", "processingFrame");
+//        Log.d("processingFrame", mat.size().toString());
         if (trackingThreadHandler != null) {
             trackingThreadHandler.post(new TrackingRunnable(mat));
         } else {
@@ -851,17 +863,17 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         int yoffset = 0;
 
                         if (cameraEngine.isFrontCamera()) {
-                            xoffset = (int) (mat.cols()/15/2 - (p.x + width/2.0));
-                            yoffset = (int) (mat.rows()/15/2 - (p.y + height/2.0));
+                            xoffset = (int) (smallMat.cols()/2 - (p.x + width/2.0));
+                            yoffset = (int) (smallMat.rows()/2 - (p.y + height/2.0));
                         } else {
-                            xoffset = (int) (-mat.cols()/15/2 + (p.x + width/2.0));
-                            yoffset = (int) (-mat.rows()/15/2 + (p.y + height/2.0));
+                            xoffset = (int) (-smallMat.cols()/2 + (p.x + width/2.0));
+                            yoffset = (int) (-smallMat.rows()/2 + (p.y + height/2.0));
                         }
 
                         xoffset *= 10;
                         yoffset *= 10;
 
-//                        Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
+                        Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
 
                         sendMessage.setXoffset(TypeConversion.intToBytes(xoffset));
                         sendMessage.setYoffset(TypeConversion.intToBytes(yoffset));
@@ -904,6 +916,28 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                             | View.SYSTEM_UI_FLAG_FULLSCREEN
                             | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case BLEDriven.BLUETOOTH_REQUEST_ON:
+                bleDriven.onActivityResultCallback(requestCode, resultCode, data);
+                break;
+            case REQUEST_BLUETOOTH_ON_CODE:
+                if (resultCode == Activity.RESULT_OK) {
+                    bleDriven.onActivityResultCallback(requestCode, resultCode, data);
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            findViewById(R.id.iv_ble).performClick();
+                        }
+                    }, 500);
+                }
+                break;
         }
     }
 }

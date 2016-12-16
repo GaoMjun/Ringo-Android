@@ -1,5 +1,6 @@
 package io.github.gaomjun.blecommunication.BLECommunication;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -16,6 +17,7 @@ import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.ParcelUuid;
@@ -35,6 +37,7 @@ import static android.bluetooth.BluetoothProfile.GATT;
  */
 
 public class BLEDriven {
+    public static final int BLUETOOTH_REQUEST_ON = 10;
     private SendMessage sendMessage = SendMessage.getInstance();
 
     private BluetoothManager bluetoothManager;
@@ -162,18 +165,21 @@ public class BLEDriven {
     }
 
     private void setUpBLE() {
-        bluetoothManager = (BluetoothManager) this.context.getSystemService(Context.BLUETOOTH_SERVICE);
+        bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothManagerAdapter = bluetoothManager.getAdapter();
 
         if (bluetoothManagerAdapter == null || !bluetoothManagerAdapter.isEnabled()) {
-            // displays a dialog requesting user permission to enable Bluetooth.
             //TODO
-            Log.w("setUpBLE", "displays a dialog requesting user permission to enable Bluetooth.");
+            ((Activity) context).startActivityForResult(
+                    new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), BLUETOOTH_REQUEST_ON);
+            return;
         }
 
         bluetoothLeScanner = bluetoothManagerAdapter.getBluetoothLeScanner();
 
         new WriteThread().start();
+
+        bluetoothIsAvailable = true;
     }
 
     public void scanDevices() {
@@ -331,4 +337,23 @@ public class BLEDriven {
             }
         }
     }
+
+    public void onActivityResultCallback(int requestCode, int resultCode, Intent data) {
+        if ((requestCode == BLUETOOTH_REQUEST_ON) ||
+                (requestCode == 11)) {
+            switch (resultCode) {
+                case Activity.RESULT_OK:
+                    bluetoothLeScanner = bluetoothManagerAdapter.getBluetoothLeScanner();
+
+                    new WriteThread().start();
+                    bluetoothIsAvailable = true;
+                    break;
+                case Activity.RESULT_CANCELED:
+                    bluetoothIsAvailable = false;
+                    break;
+            }
+        }
+    }
+
+    public boolean bluetoothIsAvailable = false;
 }
