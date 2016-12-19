@@ -395,6 +395,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         return ringoDirectory.getAbsolutePath();
     }
 
+    private double boxWidth = 0;
+    private double boxHeight = 0;
     private View.OnTouchListener onTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
@@ -435,6 +437,9 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     if (Math.abs(startPoint.x - endPoint.x) > 100 &&
                         Math.abs(startPoint.y - endPoint.y) > 100) {
                         canTrackerInit = true;
+                        // save box
+                        boxWidth = Math.abs(startPoint.x - endPoint.x);
+                        boxHeight =  Math.abs(startPoint.y - endPoint.y);
                     } else {
                         canTrackerInit = false;
                         startTracking = false;
@@ -855,8 +860,14 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                             final int w = ((rect[2]*SCALE)>SCREEN_WIDTH) ? SCREEN_WIDTH : rect[2]*SCALE;
                             final int h = (((rect[3]*SCALE)>SCREEN_HEIGHT) ? SCREEN_HEIGHT : rect[3]*SCALE);
 
-                            trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE,
-                                    w, h, 0);
+                            if (w < boxWidth && h < boxHeight) {
+                                trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE,
+                                        w, h, 0);
+                            } else {
+                                trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE,
+                                        (int)boxWidth, (int)boxHeight, 0);
+                            }
+
                             trackingBox.setVisibility(View.VISIBLE);
                         }
                     });
