@@ -53,6 +53,7 @@ import io.github.gaomjun.blecommunication.BLECommunication.Message.SendMessage;
 import io.github.gaomjun.cameraengine.CameraEngine;
 import io.github.gaomjun.cmttracker.CMTTracker;
 import io.github.gaomjun.cvcamera.CVCamera;
+import io.github.gaomjun.gallary.gallary_grid.ui.GallaryGridActivity;
 import io.github.gaomjun.ringo.BluetoothDevicesList.Adapter.BluetoothDevicesListAdapter;
 import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListDataSource;
 import io.github.gaomjun.timelabel.TimeLabel;
@@ -222,7 +223,9 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                             imageView.setTag(R.drawable.iv_capture);
                         }
                     }
-
+                    break;
+                case R.id.iv_album:
+                    startActivity(new Intent(MainActivity.this, GallaryGridActivity.class));
                     break;
             }
         }

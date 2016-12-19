@@ -59,6 +59,7 @@ dependencies {
     compile 'com.tencent.bugly:crashreport:2.4.0'
     compile 'com.tencent.bugly:nativecrashreport:3.1.0'
     compile project(':timelabel')
+    compile project(':gallary')
 }
 
 bugly {

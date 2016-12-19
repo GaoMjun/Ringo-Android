@@ -33,6 +33,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name="io.github.gaomjun.gallary.gallary_grid.ui.GallaryGridActivity"
+            android:label="Gallary_Grid"
+            android:theme="@style/FullScreen"
+            android:screenOrientation="landscape"/>
+        <activity android:name="io.github.gaomjun.gallary.gallary_slider.ui.GallarySliderActivity"
+            android:label="Gallary_Slider"
+            android:theme="@style/FullScreen"
+            android:screenOrientation="landscape"/>
 
         <meta-data android:name="BUGLY_APPID" android:value="0584fe1413"/>
         <meta-data android:name="BUGLY_ENABLE_DEBUG" android:value="true"/>
