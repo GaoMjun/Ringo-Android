@@ -169,6 +169,7 @@ public class CameraEngine {
 //                    setRotation(180);
 //                }
                 CameraEngine.surfaceTexture = surfaceTexture;
+                setFocusMode();
                 camera.startPreview();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -180,8 +181,9 @@ public class CameraEngine {
         return cameraId == 1 ? true : false;
     }
 
-    public static void startPreview() {
+    public void startPreview() {
         if (camera != null) {
+            setFocusMode();
             camera.startPreview();
         }
     }
@@ -236,10 +238,6 @@ public class CameraEngine {
         Camera.Size pictureSize = getLargePictureSize();
         parameters.setPictureSize(pictureSize.width, pictureSize.height);
 
-        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-
-//        camera.enableShutterSound(true);
-
         setParameters(parameters);
 
         if (isFrontCamera()) {
@@ -256,6 +254,32 @@ public class CameraEngine {
     }
 
     private void setFrontCameraParameters() {
+
+    }
+
+    private void setFocusMode() {
+        Camera.Parameters parameters = camera.getParameters();
+
+        List<String> supportedFocusModes = camera.getParameters().getSupportedFocusModes();
+
+        if (supportedFocusModes != null ) {
+            if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                camera.cancelAutoFocus();
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+                camera.setParameters(parameters);
+                System.out.println("setFocusMode FOCUS_MODE_CONTINUOUS_VIDEO");
+            } else if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+                camera.setParameters(parameters);
+                System.out.println("setFocusMode FOCUS_MODE_CONTINUOUS_PICTURE");
+            } else if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+                camera.setParameters(parameters);
+                System.out.println("setFocusMode FOCUS_MODE_AUTO");
+            } else {
+                System.out.println("setFocusMode NONE");
+            }
+        }
 
     }
 
