@@ -94,6 +94,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private CameraEngine cameraEngine = null;
     private boolean isRecrding = false;
 
+    private boolean canSwitchTrackingStatus = true;
     private View.OnClickListener btn_listener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -182,21 +183,37 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
                     break;
                 case R.id.iv_tracking_status:
-                    ImageView iv_tracking_status = (ImageView) findViewById(R.id.iv_tracking_status);
-                    iv_tracking_status.setSelected(!iv_tracking_status.isSelected());
-                    if (iv_tracking_status.isSelected()) {
-//                        Log.d("iv_tracking_status", "selected");
-                        sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_ON);
-                    } else {
-//                        Log.d("iv_tracking_status", "no selected");
-                        sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_OFF);
-                        sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
-                        canTrackerInit = false;
-                        startTracking = false;
-                        if (trackingBox.getVisibility() != View.GONE) {
-                            trackingBox.setVisibility(View.GONE);
-                        }
+                    if (canSwitchTrackingStatus) {
+                        canSwitchTrackingStatus = false;
 
+                        ImageView iv_tracking_status = (ImageView) findViewById(R.id.iv_tracking_status);
+                        iv_tracking_status.setSelected(!iv_tracking_status.isSelected());
+                        if (iv_tracking_status.isSelected()) {
+//                        Log.d("iv_tracking_status", "selected");
+                            sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_ON);
+                            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    canSwitchTrackingStatus = true;
+                                }
+                            }, 500);
+                        } else {
+//                        Log.d("iv_tracking_status", "no selected");
+                            sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_OFF);
+                            sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
+                            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    canSwitchTrackingStatus = true;
+                                }
+                            }, 500);
+                            canTrackerInit = false;
+                            startTracking = false;
+                            if (trackingBox.getVisibility() != View.GONE) {
+                                trackingBox.setVisibility(View.GONE);
+                            }
+
+                        }
                     }
                     break;
                 case R.id.iv_switch_camera_mode:
