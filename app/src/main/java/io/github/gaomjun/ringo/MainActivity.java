@@ -42,8 +42,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import io.github.gaomjun.blecommunication.BLECommunication.BLEDriven;
@@ -321,7 +323,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         String ringoDirectory = ringoDirectory();
         if (ringoDirectory == null) return false;
 
-        String moviePath = ringoDirectory + "/" +System.currentTimeMillis() + ".mp4";
+        String currentTimeString = new SimpleDateFormat("yyyyMMddHHmmSS").format(new Date());
+        String moviePath = ringoDirectory + "/" + currentTimeString + ".mp4";
         cameraEngine.startRecord(moviePath);
 
         return true;
