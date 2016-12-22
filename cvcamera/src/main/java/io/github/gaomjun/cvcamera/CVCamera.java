@@ -9,6 +9,7 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
 import io.github.gaomjun.cameraengine.CameraEngine;
 
@@ -25,7 +26,11 @@ public class CVCamera {
         public void onPreviewFrame(byte[] data, Camera camera) {
             Mat mat = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
             mat.put(0, 0, data);
-            delegate.processingFrame(mat);
+            if (!mat.empty()) {
+                final Mat smallMat = mat.clone();
+                Imgproc.resize(smallMat, smallMat, new org.opencv.core.Size(128, 72));
+                delegate.processingFrame(smallMat);
+            }
         }
     };
 

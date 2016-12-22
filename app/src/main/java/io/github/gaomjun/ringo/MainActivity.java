@@ -34,6 +34,7 @@ import com.daimajia.androidanimations.library.Techniques;
 import com.daimajia.androidanimations.library.YoYo;
 import com.tencent.bugly.crashreport.CrashReport;
 
+import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.imgproc.Imgproc;
@@ -257,11 +258,16 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private void takePicture() {
         cameraEngine.takePicture(new Camera.PictureCallback() {
             @Override
-            public void onPictureTaken(byte[] data, Camera camera) {
+            public void onPictureTaken(final byte[] data, Camera camera) {
                 Log.d("onPictureTaken", "takePicture");
-                cameraEngine.startPreview();
+                camera.startPreview();
                 if (data != null) {
-                    savePhotoToAlbum(data);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            savePhotoToAlbum(data);
+                        }
+                    }).start();
                 }
             }
         });
@@ -360,7 +366,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     };
     private boolean canTracking = false;
 
-    private void savePhotoToAlbum(byte[] data) {
+    private void savePhotoToAlbum(final byte[] data) {
         Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
         if (bitmap != null) {
             String ringoDirectory = ringoDirectory();
@@ -420,7 +426,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private View.OnTouchListener onTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-            if (canTracking == false) return true;
+//            if (canTracking == false) return true;
 
             final Point point = new Point(event.getX(), event.getY());
 //            Log.d("OnTouch", point.toString());
@@ -827,7 +833,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     }
 
     @Override
-    public void processingFrame(Mat mat) {
+    public void processingFrame(final Mat mat) {
 //        Log.d("processingFrame", mat.size().toString());
         if (trackingThreadHandler != null) {
             trackingThreadHandler.post(new TrackingRunnable(mat));
@@ -846,11 +852,24 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         @Override
         public void run() {
 
-            Mat smallMat = mat.clone();
-            Imgproc.resize(smallMat, smallMat, new org.opencv.core.Size(128, 72));
+//            new Thread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    synchronized (this) {
+//                        final Bitmap img = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
+//                        Utils.matToBitmap(mat, img);
+//                        runOnUiThread(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                testImageView.setImageBitmap(img);
+//                            }
+//                        });
+//                    }
+//                }
+//            }).start();
 
             if (canTrackerInit) {
-                cmtTracker.OpenCMT(smallMat.getNativeObjAddr(),
+                cmtTracker.OpenCMT(mat.getNativeObjAddr(),
                         (int) (startPoint.x / SCALE),
                         (int) (startPoint.y / SCALE),
                         (int) (endPoint.x / SCALE),
@@ -861,7 +880,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             }
 
             if (startTracking) {
-                cmtTracker.ProcessCMT(smallMat.getNativeObjAddr(), cameraEngine.isFrontCamera());
+                cmtTracker.ProcessCMT(mat.getNativeObjAddr(), cameraEngine.isFrontCamera());
                 final int[] rect = cmtTracker.CMTgetRect();
 
                 if (cmtTracker.CMTgetResult()) {
@@ -897,11 +916,11 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         int yoffset = 0;
 
                         if (cameraEngine.isFrontCamera()) {
-                            xoffset = (int) (smallMat.cols()/2 - (p.x + width/2.0));
-                            yoffset = (int) (smallMat.rows()/2 - (p.y + height/2.0));
+                            xoffset = (int) (mat.cols()/2 - (p.x + width/2.0));
+                            yoffset = (int) (mat.rows()/2 - (p.y + height/2.0));
                         } else {
-                            xoffset = (int) (-smallMat.cols()/2 + (p.x + width/2.0));
-                            yoffset = (int) (-smallMat.rows()/2 + (p.y + height/2.0));
+                            xoffset = (int) (-mat.cols()/2 + (p.x + width/2.0));
+                            yoffset = (int) (-mat.rows()/2 + (p.y + height/2.0));
                         }
 
                         xoffset *= 10;
