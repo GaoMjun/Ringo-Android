@@ -1,8 +1,11 @@
 package io.github.gaomjun.cameraengine;
 
+import android.app.Activity;
 import android.content.Context;
+import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.AudioManager;
@@ -13,6 +16,7 @@ import android.view.Surface;
 import android.view.TextureView;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -162,6 +166,10 @@ public class CameraEngine {
     public void startPreview(SurfaceTexture surfaceTexture) {
         if (camera != null) {
             try {
+                setFocusMode();
+                setPreviewSize();
+                setPictureSize();
+                setPreviewFpsRange();
                 camera.setPreviewTexture(surfaceTexture);
                 camera.setPreviewCallback(previewCallback);
 //                if (isFrontCamera()) {
@@ -169,7 +177,6 @@ public class CameraEngine {
 //                    setRotation(180);
 //                }
                 CameraEngine.surfaceTexture = surfaceTexture;
-                setFocusMode();
                 camera.startPreview();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -184,6 +191,9 @@ public class CameraEngine {
     public void startPreview() {
         if (camera != null) {
             setFocusMode();
+            setPreviewSize();
+            setPictureSize();
+            setPreviewFpsRange();
             camera.startPreview();
         }
     }
@@ -194,7 +204,7 @@ public class CameraEngine {
         }
     }
 
-    public static void takePicture(Camera.PictureCallback jpegCallback) {
+    public void takePicture(Camera.PictureCallback jpegCallback) {
         if (camera != null) {
             camera.takePicture(shutterCallback, null, jpegCallback);
         }
@@ -229,38 +239,22 @@ public class CameraEngine {
     private void setDefaultParameters() {
         Camera.Parameters parameters = camera.getParameters();
 
-        Camera.Size previewSize = getLargePreviewSize();
-        previewWidth = previewSize.width;
-        previewHeight = previewSize.height;
-        parameters.setPreviewSize(previewSize.width, previewSize.height);
-//        parameters.setPreviewFormat(PixelFormat.RGB_888);
+        List<Integer> supportedPreviewFormats = parameters.getSupportedPreviewFormats();
+        if (supportedPreviewFormats != null && supportedPreviewFormats.size() > 0) {
+            if (supportedPreviewFormats.contains(ImageFormat.YV12)) {
+                parameters.setPreviewFormat(ImageFormat.YV12);
 
-        Camera.Size pictureSize = getLargePictureSize();
-        parameters.setPictureSize(pictureSize.width, pictureSize.height);
-
-        setParameters(parameters);
-
-        if (isFrontCamera()) {
-            setFrontCameraParameters();
-            Log.d("setDefaultParameters", "front camera");
-        } else {
-            setBackCameraParameters();
-            Log.d("setDefaultParameters", "back camera");
+                camera.setParameters(parameters);
+                System.out.println("setPreviewFormat YV12");
+            }
         }
-    }
-
-    private void setBackCameraParameters() {
-
-    }
-
-    private void setFrontCameraParameters() {
 
     }
 
     private void setFocusMode() {
         Camera.Parameters parameters = camera.getParameters();
 
-        List<String> supportedFocusModes = camera.getParameters().getSupportedFocusModes();
+        List<String> supportedFocusModes = parameters.getSupportedFocusModes();
 
         if (supportedFocusModes != null ) {
             if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
@@ -273,50 +267,105 @@ public class CameraEngine {
                 camera.setParameters(parameters);
                 System.out.println("setFocusMode FOCUS_MODE_CONTINUOUS_PICTURE");
             } else if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                // TODO focus strategy
                 parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
                 camera.setParameters(parameters);
                 System.out.println("setFocusMode FOCUS_MODE_AUTO");
             } else {
+                // TODO focus strategy
                 System.out.println("setFocusMode NONE");
             }
         }
+    }
 
+    private void setPreviewSize() {
+        Camera.Parameters parameters = camera.getParameters();
+
+        Point displaySize = new Point();
+        ((Activity) context).getWindowManager().getDefaultDisplay().getRealSize(displaySize);
+        List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
+        List<Camera.Size> candidateSize = new ArrayList<>();
+        Camera.Size applySize = null;
+        for (Camera.Size size :
+                supportedPreviewSizes) {
+            if ((size.width == displaySize.x) && (size.height == displaySize.y)) {
+                applySize = size;
+                break;
+            }
+            float eps = Math.abs(displaySize.x / (float) displaySize.y - size.width / (float) size.height);
+            if (eps < 0.1) {
+                candidateSize.add(size);
+            }
+        }
+
+        if (applySize == null) {
+            if (candidateSize != null && candidateSize.size() > 0) {
+                Camera.Size maxSize = candidateSize.get(0);
+                for (Camera.Size size :
+                        candidateSize) {
+                    maxSize = size.width*size.height > maxSize.width*maxSize.height ? size : maxSize;
+                }
+                applySize = maxSize;
+            }
+        }
+
+        previewWidth = applySize.width;
+        previewHeight = applySize.height;
+        parameters.setPreviewSize(previewWidth, previewHeight);
+        System.out.println("setPreviewSize " + applySize.width + "x" + applySize.height);
+        camera.setParameters(parameters);
+    }
+
+    private void setPictureSize() {
+        Camera.Parameters parameters = camera.getParameters();
+
+        List<Camera.Size> supportedPictureSizes = parameters.getSupportedPictureSizes();
+        Camera.Size applySize = null;
+        if (supportedPictureSizes != null && supportedPictureSizes.size() > 0) {
+            Camera.Size maxSize = supportedPictureSizes.get(0);
+            for (Camera.Size size :
+                    supportedPictureSizes) {
+                maxSize = size.width*size.height > maxSize.width*maxSize.height ? size : maxSize;
+            }
+
+            applySize = maxSize;
+        }
+
+        if (applySize != null) {
+            parameters.setPictureSize(applySize.width, applySize.height);
+            System.out.println("setPictureSize " + applySize.width + "x" + applySize.height);
+            camera.setParameters(parameters);
+        }
+    }
+
+    private void setPreviewFpsRange() {
+        Camera.Parameters parameters = camera.getParameters();
+
+        List<int[]> supportedPreviewFpsRange = parameters.getSupportedPreviewFpsRange();
+        int[] applyRange = null;
+        if (supportedPreviewFpsRange != null && supportedPreviewFpsRange.size() > 0) {
+            for (int[] fpsRange :
+                    supportedPreviewFpsRange) {
+                int min = fpsRange[0];
+                int max = fpsRange[1];
+
+                if ((min == 30000) && (max == 30000)) {
+                    applyRange = fpsRange;
+                    break;
+                }
+            }
+        }
+
+        if (applyRange != null) {
+            parameters.setPreviewFpsRange(applyRange[0],applyRange[0]);
+            System.out.println("setPreviewFpsRange " + applyRange[0] + " " + applyRange[0]);
+            camera.setParameters(parameters);
+        }
     }
 
     private void setRotation(int rotation) {
         Camera.Parameters parameters = camera.getParameters();
         parameters.setRotation(rotation);
         camera.setParameters(parameters);
-    }
-
-    private static Camera.Size getLargePictureSize() {
-        if (camera != null) {
-            List<Camera.Size> supportedPictureSizes = camera.getParameters().getSupportedPictureSizes();
-            Camera.Size size_t = supportedPictureSizes.get(0);
-            for (Camera.Size size :
-                    supportedPictureSizes) {
-                float scale = (float)(size.height) / size.width;
-                if(size_t.width < size.width && scale < 0.6f && scale > 0.5f) {
-                    size_t = size;
-                }
-            }
-            return size_t;
-        }
-        return null;
-    }
-
-    private static Camera.Size getLargePreviewSize() {
-        if (camera != null) {
-            List<Camera.Size> supportedPreviewSizes = camera.getParameters().getSupportedPreviewSizes();
-            Camera.Size size_t = supportedPreviewSizes.get(0);
-            for (Camera.Size size :
-                    supportedPreviewSizes) {
-                if (size_t.width < size.width) {
-                    size_t = size;
-                }
-            }
-            return size_t;
-        }
-        return null;
     }
 }
