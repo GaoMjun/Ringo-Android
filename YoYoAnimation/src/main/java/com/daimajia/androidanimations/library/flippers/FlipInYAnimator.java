@@ -33,7 +33,7 @@ public class FlipInYAnimator extends BaseViewAnimator {
     @Override
     public void prepare(View target) {
         getAnimatorAgent().playTogether(
-                ObjectAnimator.ofFloat(target, "rotationY", 180, 0),
+                ObjectAnimator.ofFloat(target, "rotationY", 90, 0),
                 ObjectAnimator.ofFloat(target, "alpha", 1, 0, 1)
         );
     }

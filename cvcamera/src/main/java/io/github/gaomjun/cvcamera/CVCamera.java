@@ -2,6 +2,7 @@ package io.github.gaomjun.cvcamera;
 
 import android.graphics.Matrix;
 import android.hardware.Camera;
+import android.provider.Settings;
 import android.util.Log;
 
 import org.opencv.android.InstallCallbackInterface;
@@ -23,14 +24,21 @@ public class CVCamera {
 
     private Camera.PreviewCallback cameraPreviewCallback  = new Camera.PreviewCallback() {
         @Override
-        public void onPreviewFrame(byte[] data, Camera camera) {
-            Mat mat = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
-            mat.put(0, 0, data);
-            if (!mat.empty()) {
-                final Mat smallMat = mat.clone();
-                Imgproc.resize(smallMat, smallMat, new org.opencv.core.Size(128, 72));
-                delegate.processingFrame(smallMat);
-            }
+        public void onPreviewFrame(final byte[] data, Camera camera) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (this) {
+                        Mat mat = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
+                        mat.put(0, 0, data);
+                        if (!mat.empty()) {
+                            final Mat smallMat = mat.clone();
+                            Imgproc.resize(smallMat, smallMat, new org.opencv.core.Size(128, 72));
+                            delegate.processingFrame(smallMat);
+                        }
+                    }
+                }
+            }).start();
         }
     };
 

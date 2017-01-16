@@ -286,26 +286,32 @@ public class CameraEngine {
         List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
         List<Camera.Size> candidateSize = new ArrayList<>();
         Camera.Size applySize = null;
-        for (Camera.Size size :
-                supportedPreviewSizes) {
-            if ((size.width == displaySize.x) && (size.height == displaySize.y)) {
-                applySize = size;
-                break;
-            }
-            float eps = Math.abs(displaySize.x / (float) displaySize.y - size.width / (float) size.height);
-            if (eps < 0.1) {
-                candidateSize.add(size);
+        if (supportedPreviewSizes != null && supportedPreviewSizes.size() > 0) {
+            for (Camera.Size size :
+                    supportedPreviewSizes) {
+                if ((size.width == displaySize.x) && (size.height == displaySize.y)) {
+                    applySize = size;
+                    break;
+                }
+                float eps = Math.abs(displaySize.x / (float) displaySize.y - size.width / (float) size.height);
+                if (eps < 0.1) {
+                    candidateSize.add(size);
+                }
             }
         }
 
         if (applySize == null) {
             if (candidateSize != null && candidateSize.size() > 0) {
-                Camera.Size maxSize = candidateSize.get(0);
+                Camera.Size minSize = candidateSize.get(0);
                 for (Camera.Size size :
                         candidateSize) {
-                    maxSize = size.width*size.height > maxSize.width*maxSize.height ? size : maxSize;
+//                    if (size.width == 1280 && size.height == 720) {
+//                        minSize = size;
+//                        break;
+//                    }
+                    minSize = size.width < minSize.width ? size : minSize;
                 }
-                applySize = maxSize;
+                applySize = minSize;
             }
         }
 

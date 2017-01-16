@@ -147,7 +147,7 @@
         android:layout_height="108dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
-        android:visibility="visible"/>
+        android:visibility="gone"/>
 
     <TextView
         android:id="@+id/recordTimeLabel"

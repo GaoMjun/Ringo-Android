@@ -31,7 +31,7 @@ android {
                     def newName = output.outputFile.name
 
                     newName = newName.replace("app-", "$project.ext.appName-")
-                    newName = newName.replace("-release", "1.0.0-" + formattedDate)
+                    newName = newName.replace("-release", "-1.0.0-" + formattedDate)
 
                     output.outputFile = new File(output.outputFile.parent, newName)
                 }
@@ -60,6 +60,7 @@ dependencies {
     compile 'com.tencent.bugly:nativecrashreport:3.1.0'
     compile project(':timelabel')
     compile project(':gallary')
+    compile project(':yuv_decoder')
 }
 
 bugly {

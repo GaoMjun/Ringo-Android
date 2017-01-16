@@ -159,7 +159,16 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     break;
                 case R.id.iv_switch_camera:
                     //TODO animation
-                    cameraEngine.switchCamera();
+//                    cameraEngine.stopPreview();
+//                    YoYo.with(Techniques.FlipInY)
+//                            .duration(200)
+//                            .playOn(cameraView);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            cameraEngine.switchCamera();
+                        }
+                    }).start();
                     break;
                 case R.id.bluetooth_devices_list_close:
                     findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.GONE);
@@ -748,13 +757,18 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         if ((cameraView != null) && (!cameraView.isAvailable()) && (cameraEngine != null)) {
             cameraView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
                 @Override
-                public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture,
+                public void onSurfaceTextureAvailable(final SurfaceTexture surfaceTexture,
                                                       int width, int height) {
                     Log.d("SurfaceTextureListener", "onSurfaceTextureAvailable");
                     MainActivity.this.surfaceTexture = surfaceTexture;
                     if (allPermissionGranted) {
-                        cameraEngine.openCamera();
-                        cameraEngine.startPreview(surfaceTexture);
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                cameraEngine.openCamera();
+                                cameraEngine.startPreview(surfaceTexture);
+                            }
+                        }).start();
                     }
                 }
 
@@ -768,7 +782,10 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 @Override
                 public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
                     Log.d("SurfaceTextureListener", "onSurfaceTextureDestroyed");
-                    return false;
+                    if (cameraEngine != null)
+                        cameraEngine.releaseCamera();
+
+                    return true;
                 }
 
                 @Override
@@ -783,8 +800,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     @Override
     protected void onStop() {
-        if (cameraEngine != null)
-            cameraEngine.releaseCamera();
+
 
         super.onStop();
     }
