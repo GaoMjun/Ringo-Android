@@ -30,4 +30,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile project(':openCVLibrary310')
     compile project(':cameraengine')
+    compile project(':live')
+    compile project(':libyuv')
+    compile project(':audioengine')
 }

@@ -24,6 +24,8 @@ import java.util.List;
  */
 
 public class CameraEngine {
+//    private byte[] cameraCallbackBuffer1;
+//    private byte[] cameraCallbackBuffer2;
     private static final int RECORD_FINISH = 0;
     public static Context context;
     private volatile static CameraEngine instance = null;
@@ -129,7 +131,7 @@ public class CameraEngine {
 
     public void releaseCamera() {
         if (camera != null) {
-            camera.setPreviewCallback(null);
+            camera.setPreviewCallbackWithBuffer(null);
             camera.stopPreview();
             camera.release();
             camera = null;
@@ -171,6 +173,11 @@ public class CameraEngine {
                 setPictureSize();
                 setPreviewFpsRange();
                 camera.setPreviewTexture(surfaceTexture);
+//                cameraCallbackBuffer1 = new byte[getYUVBufferSize(previewWidth, previewHeight)];
+//                cameraCallbackBuffer2 = new byte[getYUVBufferSize(previewWidth, previewHeight)];
+//                camera.addCallbackBuffer(cameraCallbackBuffer1);
+//                camera.addCallbackBuffer(cameraCallbackBuffer2);
+//                camera.setPreviewCallbackWithBuffer(previewCallback);
                 camera.setPreviewCallback(previewCallback);
 //                if (isFrontCamera()) {
 //                    camera.setDisplayOrientation(180);
@@ -217,6 +224,11 @@ public class CameraEngine {
         initRecorder(moviePath);
 
         mediaRecorder.start();
+//        cameraCallbackBuffer1 = new byte[getYUVBufferSize(previewWidth, previewHeight)];
+//        cameraCallbackBuffer2 = new byte[getYUVBufferSize(previewWidth, previewHeight)];
+//        camera.addCallbackBuffer(cameraCallbackBuffer1);
+//        camera.addCallbackBuffer(cameraCallbackBuffer2);
+//        camera.setPreviewCallbackWithBuffer(previewCallback);
         camera.setPreviewCallback(previewCallback);
     }
 
@@ -248,7 +260,6 @@ public class CameraEngine {
                 System.out.println("setPreviewFormat YV12");
             }
         }
-
     }
 
     private void setFocusMode() {
@@ -373,5 +384,42 @@ public class CameraEngine {
         Camera.Parameters parameters = camera.getParameters();
         parameters.setRotation(rotation);
         camera.setParameters(parameters);
+    }
+
+//    private class CameraPreviewCallback implements Camera.PreviewCallback {
+//
+//        @Override
+//        public void onPreviewFrame(byte[] data, Camera camera) {
+//            previewCallback.previewCallback(data, previewWidth, previewHeight);
+//
+//            camera.addCallbackBuffer(data);
+//        }
+//    }
+//
+//    public interface PreviewCallback {
+//        void previewCallback(byte[] buffer, int width, int height);
+//    }
+//
+//    private PreviewCallback previewCallback;
+//
+//    public void setPreviewCallback(PreviewCallback previewCallback) {
+//        this.previewCallback = previewCallback;
+//    }
+
+    public static int getYUVBufferSize(int width, int height) {
+        // stride = ALIGN(width, 16)
+        int stride = (int)Math.ceil(width / 16.0) * 16;
+
+        // y_size = stride * height
+        int y_size = stride * height;
+
+        // c_stride = ALIGN(stride/2, 16)
+        int c_stride = (int)Math.ceil(width / 32.0) * 16;
+
+        // c_size = c_stride * height/2
+        int c_size = c_stride * height / 2;
+
+        // size = y_size + c_size * 2
+        return y_size + c_size * 2;
     }
 }

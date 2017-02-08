@@ -1,8 +1,8 @@
 package io.github.gaomjun.cvcamera;
 
-import android.graphics.Matrix;
 import android.hardware.Camera;
-import android.provider.Settings;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.util.Log;
 
 import org.opencv.android.InstallCallbackInterface;
@@ -12,19 +12,41 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
+import io.github.gaomjun.audioengine.AudioEngine;
 import io.github.gaomjun.cameraengine.CameraEngine;
+import io.github.gaomjun.live.encodeConfiguration.VideoConfiguration;
+import io.github.gaomjun.live.h264Encoder.H264Encoder;
 
 /**
  * Created by qq on 21/11/2016.
  */
 
 public class CVCamera {
+
+    private H264Encoder h264Encoder = new H264Encoder(VideoConfiguration.instance());
+
+    private AudioEngine audioEngine = new AudioEngine();
+    private boolean audioEngineStarted = false;
+
     public CameraEngine cameraEngine = CameraEngine.getInstance();
+    public boolean startLive = false;
     public FrameCallback delegate;
+//    private byte[] cameraCallbackBuffer;
 
     private Camera.PreviewCallback cameraPreviewCallback  = new Camera.PreviewCallback() {
         @Override
         public void onPreviewFrame(final byte[] data, Camera camera) {
+//            System.out.println("onPreviewFrame");
+
+            if (startLive) {
+                h264Encoder.encoding(data, cameraEngine.previewWidth, cameraEngine.previewHeight, System.currentTimeMillis());
+
+                if (!audioEngineStarted) {
+                    audioEngineStarted = true;
+                    audioEngine.start();
+                }
+            }
+
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -39,6 +61,8 @@ public class CVCamera {
                     }
                 }
             }).start();
+
+//            camera.addCallbackBuffer(data);
         }
     };
 
@@ -74,4 +98,12 @@ public class CVCamera {
     public interface FrameCallback {
         void processingFrame(Mat mat);
     }
+
+//    private class PreViewCallback implements CameraEngine.PreviewCallback {
+//
+//        @Override
+//        public void previewCallback(byte[] buffer, int width, int height) {
+//            System.out.println("previewCallback");
+//        }
+//    }
 }

@@ -252,9 +252,9 @@ public class CameraEngine2 {
                     byte[] yuv = outputStream.toByteArray();
 
                     byte[] rgb = new byte[previewWidth*previewHeight];
-                    YUVDecoder.YUVToARGB(yuv, previewWidth, previewHeight, rgb);
+//                    YUVDecoder.YUVToARGB(yuv, previewWidth, previewHeight, rgb);
 
-                    final Bitmap imageBitmap = BitmapFactory.decodeByteArray(rgb., 0, rgb.length);
+//                    final Bitmap imageBitmap = BitmapFactory.decodeByteArray(rgb., 0, rgb.length);
 
 //                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                     Log.d("onImageAvailable ", image.getWidth() + "x" + image.getHeight());

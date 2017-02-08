@@ -57,6 +57,7 @@ import io.github.gaomjun.cameraengine.CameraEngine;
 import io.github.gaomjun.cmttracker.CMTTracker;
 import io.github.gaomjun.cvcamera.CVCamera;
 import io.github.gaomjun.gallary.gallary_grid.ui.GallaryGridActivity;
+import io.github.gaomjun.live.rtmpClient.RTMPClient;
 import io.github.gaomjun.ringo.BluetoothDevicesList.Adapter.BluetoothDevicesListAdapter;
 import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListDataSource;
 import io.github.gaomjun.timelabel.TimeLabel;
@@ -435,7 +436,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private View.OnTouchListener onTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-//            if (canTracking == false) return true;
+            if (canTracking == false) return true;
 
             final Point point = new Point(event.getX(), event.getY());
 //            Log.d("OnTouch", point.toString());
@@ -726,6 +727,24 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         initBLEDriven();
         initTracking();
 
+//        new Handler().postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                System.out.println("startLive");
+//                RTMPClient.instance().connect("rtmp://192.168.1.77:1935/gzhm/room", new RTMPClient.ConnectStateCallback() {
+//                    @Override
+//                    public void connectState(boolean state) {
+//                        if (state) {
+//                            System.out.println("connect success");
+//                            cvCamera.startLive = true;
+//                        } else {
+//                            System.out.println("connect failed");
+//                        }
+//                    }
+//                });
+//
+//            }
+//        }, 5000);
     }
 
     private void initBLEDriven() {
@@ -800,7 +819,6 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     @Override
     protected void onStop() {
-
 
         super.onStop();
     }
