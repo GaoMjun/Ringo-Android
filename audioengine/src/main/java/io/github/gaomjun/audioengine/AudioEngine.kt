@@ -77,7 +77,7 @@ class AudioEngine {
         override fun run() {
             super.run()
 
-            while (!isInterrupted()) {
+            while (!isInterrupted) {
                 if (audioData == null) {
                     audioData = ByteArray(bufferSizeInBytes!!)
                 }
