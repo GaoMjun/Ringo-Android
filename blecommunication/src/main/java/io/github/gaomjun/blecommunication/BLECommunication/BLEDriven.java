@@ -97,6 +97,7 @@ public class BLEDriven {
                             bluetoothGatt.writeDescriptor(descriptor);
                         }
 
+//                        new WriteThread().start();
                         connectingStatusCallback.onConnecting(CONNECTED);
                         connectedToDevice = true;
                     }
@@ -118,6 +119,7 @@ public class BLEDriven {
             }
         }
     };
+
     private ScanCallback scanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
@@ -183,6 +185,8 @@ public class BLEDriven {
     }
 
     public void scanDevices() {
+        System.out.println("scanDevices");
+
         bluetoothDeviceList.clear();
         if (bluetoothDevice != null) {
             bluetoothDeviceList.add(bluetoothDevice);
@@ -328,11 +332,12 @@ public class BLEDriven {
                     byte[] message = sendMessage.getMessage();
                     write(message);
 //                    Log.d("send", sendMessage.getMessageHexString());
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                }
+
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         }

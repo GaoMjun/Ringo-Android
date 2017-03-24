@@ -58,6 +58,9 @@ public class RecvMessage extends Message {
         } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_RECORD)) {
             cmd = GimbalMobileBLEProtocol.REMOTECOMMAND_RECORD;
 
+        } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_SWITCH)) {
+            cmd = GimbalMobileBLEProtocol.REMOTECOMMAND_SWITCH;
+
         } else {
             cmd = GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR;
         }
