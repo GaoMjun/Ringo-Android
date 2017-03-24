@@ -7,8 +7,10 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -21,6 +23,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.TextureView;
 import android.view.View;
@@ -34,6 +37,7 @@ import com.daimajia.androidanimations.library.Techniques;
 import com.daimajia.androidanimations.library.YoYo;
 import com.tencent.bugly.crashreport.CrashReport;
 
+import org.jetbrains.annotations.NotNull;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -57,6 +61,8 @@ import io.github.gaomjun.cameraengine.CameraEngine;
 import io.github.gaomjun.cmttracker.CMTTracker;
 import io.github.gaomjun.cvcamera.CVCamera;
 import io.github.gaomjun.gallary.gallary_grid.ui.GallaryGridActivity;
+import io.github.gaomjun.gl.GLTextureView;
+import io.github.gaomjun.gl.OffScreenRenderer;
 import io.github.gaomjun.live.rtmpClient.RTMPClient;
 import io.github.gaomjun.ringo.BluetoothDevicesList.Adapter.BluetoothDevicesListAdapter;
 import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListDataSource;
@@ -93,10 +99,9 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private CMTTracker cmtTracker = null;
     private View trackingBox;
     private ImageView testImageView;
-    private TextureView cameraView = null;
+    private GLTextureView cameraView = null;
     private CVCamera cvCamera = null;
     private CameraEngine cameraEngine = null;
-    private boolean isRecrding = false;
 
     private boolean canSwitchTrackingStatus = true;
     private View.OnClickListener btn_listener = new View.OnClickListener() {
@@ -115,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                             takePicture();
 
                         } else {
-                            if (!isRecrding) {
+                            if (!cameraView.getRecording()) {
                                 // start record
                                 if (startRecord()) {
                                     runOnUiThread(new Runnable() {
@@ -125,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                                                     "start record", Toast.LENGTH_SHORT).show();
                                         }
                                     });
-                                    isRecrding = true;
                                     imageView.setSelected(!imageView.isSelected());
                                     {
                                         // disable some button
@@ -145,7 +149,6 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                                                 "stop record", Toast.LENGTH_SHORT).show();
                                     }
                                 });
-                                isRecrding = false;
                                 imageView.setSelected(!imageView.isSelected());
                                 {
                                     // enable disabled button
@@ -272,12 +275,30 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 Log.d("onPictureTaken", "takePicture");
                 camera.startPreview();
                 if (data != null) {
-                    new Thread(new Runnable() {
+                    Camera.Size pictureSize = camera.getParameters().getPictureSize();
+                    OffScreenRenderer.render(getApplicationContext(), data, pictureSize.width, pictureSize.height, new OffScreenRenderer.Companion.Callback() {
                         @Override
-                        public void run() {
-                            savePhotoToAlbum(data);
+                        public void renderFinish(@NotNull Bitmap bitmap) {
+                            Log.d("renderFinish", "renderFinish");
+                            Matrix matrix = new Matrix();
+                            if (cameraEngine.isFrontCamera()) {
+                                matrix.postScale(-1.0f, 1.0f);
+                            }
+                            if (cameraView.getHeight() > cameraView.getWidth()) {
+                                matrix.postRotate(-90.0f);
+                            } else {
+                                matrix.postRotate(180.0f);
+                            }
+                            Bitmap bitmapFix = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+                            savePhotoToAlbum(bitmapFix);
                         }
-                    }).start();
+                    }, null);
+//                    new Thread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            savePhotoToAlbum(data);
+//                        }
+//                    }).start();
                 }
             }
         });
@@ -287,15 +308,24 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         timeLabel.stop();
         recordTimeLabel.setVisibility(View.GONE);
 
-        cameraEngine.stopRecord(new CameraEngine.RecordStatusCallback() {
+//        cameraEngine.stopRecord(new CameraEngine.RecordStatusCallback() {
+//            @Override
+//            public void recordFinish(String moviePath) {
+//                Log.d("recordFinish", moviePath);
+//                MainActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+//                        Uri.parse("file://" + moviePath)));
+//
+//            }
+//        });
+
+        cameraView.stopRecord(new GLTextureView.RecordStatusCallback() {
             @Override
-            public void recordFinish(String moviePath) {
+            public void recordFinish(@org.jetbrains.annotations.Nullable String moviePath) {
                 Log.d("recordFinish", moviePath);
                 MainActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
                         Uri.parse("file://" + moviePath)));
-
             }
-        });
+        }, null);
     }
 
     private boolean startRecord() {
@@ -341,7 +371,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
         String currentTimeString = new SimpleDateFormat("yyyyMMddHHmmSS").format(new Date());
         String moviePath = ringoDirectory + "/" + currentTimeString + ".mp4";
-        cameraEngine.startRecord(moviePath);
+//        cameraEngine.startRecord(moviePath);
+        cameraView.startRecord(moviePath);
 
         return true;
     }
@@ -376,8 +407,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     };
     private boolean canTracking = false;
 
-    private void savePhotoToAlbum(final byte[] data) {
-        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+    private void savePhotoToAlbum(final Bitmap bitmap) {
         if (bitmap != null) {
             String ringoDirectory = ringoDirectory();
             if (ringoDirectory == null) return;
@@ -386,6 +416,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             try {
                 FileOutputStream fileOutputStream = new FileOutputStream(file);
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
+                bitmap.recycle();
 
                 fileOutputStream.flush();
                 fileOutputStream.close();
@@ -406,6 +437,11 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 e.printStackTrace();
             }
         }
+    }
+
+    private void savePhotoToAlbum(final byte[] data) {
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+        savePhotoToAlbum(bitmap);
     }
 
     @Nullable
@@ -439,7 +475,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             if (canTracking == false) return true;
 
             final Point point = new Point(event.getX(), event.getY());
-//            Log.d("OnTouch", point.toString());
+            Log.d("OnTouch", point.toString());
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     startPoint.x = point.x;
@@ -537,7 +573,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     // start capture
                     Log.d("onRecvData", "capture action");
                     {
-                        if (!isRecrding) {
+                        if (!cameraView.getRecording()) {
                             final ImageView switch_camera_mode =
                                     (ImageView) findViewById(R.id.iv_switch_camera_mode);
                             Integer tag = (Integer) switch_camera_mode.getTag();
@@ -557,12 +593,12 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                                 }
                             });
                         } else {
-                            // while recording, can not capture
+                            // while muxing, can not capture
                             MainActivity.this.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     Toast.makeText(MainActivity.this,
-                                            "while recording, can not capture",
+                                            "while muxing, can not capture",
                                             Toast.LENGTH_SHORT).show();
                                 }
                             });
@@ -611,6 +647,16 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         }
                     }, 500);
                 }
+
+            } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_SWITCH)) {
+                Log.d("onRecvData", "swich camera action");
+                findViewById(R.id.iv_switch_camera).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        findViewById(R.id.iv_switch_camera).performClick();
+                    }
+                });
+                sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_SWITCH_OK);
 
             } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR)){
                 sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMADNBACK_CLEAR);
@@ -719,6 +765,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         checkPermission();
 
@@ -773,54 +820,139 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     protected void onResume() {
         super.onResume();
 
-        if ((cameraView != null) && (!cameraView.isAvailable()) && (cameraEngine != null)) {
-            cameraView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
-                @Override
-                public void onSurfaceTextureAvailable(final SurfaceTexture surfaceTexture,
-                                                      int width, int height) {
-                    Log.d("SurfaceTextureListener", "onSurfaceTextureAvailable");
-                    MainActivity.this.surfaceTexture = surfaceTexture;
-                    if (allPermissionGranted) {
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                cameraEngine.openCamera();
-                                cameraEngine.startPreview(surfaceTexture);
-                            }
-                        }).start();
+        if ((cameraView != null) && (cameraEngine != null)) {
+            SurfaceTexture cameraTexture = cameraView.getCameraTexture();
+            if (cameraTexture != null) {
+                cameraEngine.openCamera(CameraEngine.CAMERA_FRONT);
+                cameraEngine.startPreview(cameraTexture);
+            } else {
+                cameraView.setSurfaceTextureCallback(new GLTextureView.SurfaceTextureListener() {
+
+                    @Override
+                    public void onTextureAvailable(@NotNull final SurfaceTexture texture) {
+                        Log.d("SurfaceTextureListener", "onSurfaceTextureAvailable");
+                        MainActivity.this.surfaceTexture = texture;
+                        if (allPermissionGranted) {
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    cameraEngine.openCamera(CameraEngine.CAMERA_FRONT);
+                                    cameraEngine.startPreview(texture);
+                                }
+                            }).start();
+                        }
                     }
-                }
 
-                @Override
-                public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture,
-                                                        int width, int height) {
-                    Log.d("SurfaceTextureListener", "onSurfaceTextureSizeChanged");
+                    @Override
+                    public void onSurfaceTextureUpdated(@org.jetbrains.annotations.Nullable SurfaceTexture surface) {
 
-                }
+                    }
 
-                @Override
-                public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-                    Log.d("SurfaceTextureListener", "onSurfaceTextureDestroyed");
-                    if (cameraEngine != null)
-                        cameraEngine.releaseCamera();
+                    @Override
+                    public void onSurfaceTextureSizeChanged(@org.jetbrains.annotations.Nullable SurfaceTexture surface, int width, int height) {
 
-                    return true;
-                }
+                    }
 
-                @Override
-                public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+                    @Override
+                    public void onSurfaceTextureAvailable(@org.jetbrains.annotations.Nullable SurfaceTexture surface, int width, int height) {
 
-                }
-            });
+                    }
+
+                    @Override
+                    public boolean onSurfaceTextureDestroyed(@org.jetbrains.annotations.Nullable SurfaceTexture surface) {
+                        if (cameraEngine != null)
+                            cameraEngine.releaseCamera();
+
+                        return true;
+                    }
+                });
+            }
+//            cameraView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+//                @Override
+//                public void onSurfaceTextureAvailable(final SurfaceTexture surfaceTexture,
+//                                                      int width, int height) {
+//                    Log.d("SurfaceTextureListener", "onSurfaceTextureAvailable");
+//                    MainActivity.this.surfaceTexture = surfaceTexture;
+//                    if (allPermissionGranted) {
+//                        new Thread(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                cameraEngine.openCamera();
+//                                cameraEngine.startPreview(surfaceTexture);
+//                            }
+//                        }).start();
+//                    }
+//                }
+//
+//                @Override
+//                public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture,
+//                                                        int width, int height) {
+//                    Log.d("SurfaceTextureListener", "onSurfaceTextureSizeChanged");
+//
+//                }
+//
+//                @Override
+//                public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+//                    Log.d("SurfaceTextureListener", "onSurfaceTextureDestroyed");
+//                    if (cameraEngine != null)
+//                        cameraEngine.releaseCamera();
+//
+//                    return true;
+//                }
+//
+//                @Override
+//                public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+//
+//                }
+//            });
         }
-
-
     }
 
     @Override
-    protected void onStop() {
+    protected void onPause() {
+        super.onPause();
 
-        super.onStop();
+        if (cameraView != null) {
+            if (cameraView.getRecording()) {
+                cameraView.stopRecord(new GLTextureView.RecordStatusCallback() {
+                    @Override
+                    public void recordFinish(@org.jetbrains.annotations.Nullable String moviePath) {
+                        Log.d("recordFinish", moviePath);
+                        MainActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                                Uri.parse("file://" + moviePath)));
+                    }
+                }, null);
+            }
+        }
+
+        if (cameraEngine != null) {
+            cameraEngine.releaseCamera();
+        }
+    }
+
+    private Long pressBackTimePre = 0L;
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            Long now = System.currentTimeMillis();
+            if ((now - pressBackTimePre) > 1000) {
+                pressBackTimePre = now;
+                Toast.makeText(getApplicationContext(), "double click back to exit", Toast.LENGTH_SHORT).show();
+                return true;
+            } else {
+                Toast.makeText(getApplicationContext(), "app exit", Toast.LENGTH_SHORT).show();
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        MainActivity.this.finish();
+                        System.exit(0);
+                    }
+                }, 1000);
+                return super.onKeyDown(keyCode, event);
+            }
+        } else {
+            return super.onKeyDown(keyCode, event);
+        }
     }
 
     private void initView() {
@@ -830,7 +962,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         SCREEN_HEIGHT = getWindowManager().getDefaultDisplay().getHeight();
         SCALE = SCREEN_WIDTH / 128;
 
-        cameraView = (TextureView) findViewById(R.id.cameraView);
+        cameraView = (GLTextureView) findViewById(R.id.cameraView);
 
         findViewById(R.id.iv_capture).setOnClickListener(btn_listener);
         findViewById(R.id.iv_switch_camera).setOnClickListener(btn_listener);
@@ -960,7 +1092,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         xoffset *= 10;
                         yoffset *= 10;
 
-                        Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
+//                        Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
 
                         sendMessage.setXoffset(TypeConversion.intToBytes(xoffset));
                         sendMessage.setYoffset(TypeConversion.intToBytes(yoffset));

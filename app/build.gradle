@@ -61,6 +61,11 @@ dependencies {
     compile project(':timelabel')
     compile project(':gallary')
     compile project(':yuv_decoder')
+    compile project(':gl')
+}
+
+repositories {
+    mavenCentral()
 }
 
 bugly {
