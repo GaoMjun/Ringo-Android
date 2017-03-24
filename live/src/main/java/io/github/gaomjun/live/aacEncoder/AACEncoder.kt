@@ -46,7 +46,7 @@ class AACEncoder(configuration: AudioConfiguration) {
 
     private fun initEncoder() {
 
-        var format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, samplerate, channels)
+        val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, samplerate, channels)
         format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
         format.setInteger(MediaFormat.KEY_SAMPLE_RATE, samplerate)
         format.setInteger(MediaFormat.KEY_BIT_RATE, bitrate)
