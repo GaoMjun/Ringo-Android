@@ -27,14 +27,16 @@ public class CameraEngine {
 //    private byte[] cameraCallbackBuffer1;
 //    private byte[] cameraCallbackBuffer2;
     private static final int RECORD_FINISH = 0;
-    public static Context context;
+    public Context context;
     private volatile static CameraEngine instance = null;
-    private static int cameraId = 0;
+    public static int CAMERA_BACK = 0;
+    public static int CAMERA_FRONT = 1;
+    private int cameraId = CAMERA_BACK;
     private static SurfaceTexture surfaceTexture;
     public static int previewWidth;
     public static int previewHeight;
     private static Camera.PreviewCallback previewCallback;
-    private static Camera.ShutterCallback shutterCallback = new Camera.ShutterCallback() {
+    private Camera.ShutterCallback shutterCallback = new Camera.ShutterCallback() {
         @Override
         public void onShutter() {
             AudioManager mgr = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
@@ -131,7 +133,7 @@ public class CameraEngine {
 
     public void releaseCamera() {
         if (camera != null) {
-            camera.setPreviewCallbackWithBuffer(null);
+            camera.setPreviewCallback(null);
             camera.stopPreview();
             camera.release();
             camera = null;
@@ -160,7 +162,7 @@ public class CameraEngine {
 
     public void switchCamera() {
         releaseCamera();
-        cameraId = cameraId == 0 ? 1 : 0;
+        cameraId = cameraId == CAMERA_BACK ? CAMERA_FRONT : CAMERA_BACK;
         openCamera(cameraId);
         startPreview(surfaceTexture);
     }
@@ -191,8 +193,8 @@ public class CameraEngine {
         }
     }
 
-    public static boolean isFrontCamera() {
-        return cameraId == 1 ? true : false;
+    public boolean isFrontCamera() {
+        return cameraId == CAMERA_FRONT;
     }
 
     public void startPreview() {
@@ -224,11 +226,6 @@ public class CameraEngine {
         initRecorder(moviePath);
 
         mediaRecorder.start();
-//        cameraCallbackBuffer1 = new byte[getYUVBufferSize(previewWidth, previewHeight)];
-//        cameraCallbackBuffer2 = new byte[getYUVBufferSize(previewWidth, previewHeight)];
-//        camera.addCallbackBuffer(cameraCallbackBuffer1);
-//        camera.addCallbackBuffer(cameraCallbackBuffer2);
-//        camera.setPreviewCallbackWithBuffer(previewCallback);
         camera.setPreviewCallback(previewCallback);
     }
 
@@ -256,10 +253,20 @@ public class CameraEngine {
             if (supportedPreviewFormats.contains(ImageFormat.YV12)) {
                 parameters.setPreviewFormat(ImageFormat.YV12);
 
-                camera.setParameters(parameters);
                 System.out.println("setPreviewFormat YV12");
             }
         }
+
+        List<Integer> supportedPictureFormat = parameters.getSupportedPictureFormats();
+        if (supportedPictureFormat != null && supportedPictureFormat.size() > 0) {
+            if (supportedPictureFormat.contains(ImageFormat.JPEG)) {
+                parameters.setPictureFormat(ImageFormat.JPEG);
+
+                System.out.println("setPictureFormat JPEG");
+            }
+        }
+
+        camera.setParameters(parameters);
     }
 
     private void setFocusMode() {
@@ -294,8 +301,13 @@ public class CameraEngine {
 
         Point displaySize = new Point();
         ((Activity) context).getWindowManager().getDefaultDisplay().getRealSize(displaySize);
+        if (displaySize.x < displaySize.y) {
+            displaySize = new Point(displaySize.y, displaySize.x);
+        }
+
         List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
         List<Camera.Size> candidateSize = new ArrayList<>();
+
         Camera.Size applySize = null;
         if (supportedPreviewSizes != null && supportedPreviewSizes.size() > 0) {
             for (Camera.Size size :
@@ -328,6 +340,11 @@ public class CameraEngine {
 
         previewWidth = applySize.width;
         previewHeight = applySize.height;
+        if (displaySize.x < displaySize.y) {
+            previewWidth = applySize.height;
+            previewHeight = applySize.width;
+
+        }
         parameters.setPreviewSize(previewWidth, previewHeight);
         System.out.println("setPreviewSize " + applySize.width + "x" + applySize.height);
         camera.setParameters(parameters);
