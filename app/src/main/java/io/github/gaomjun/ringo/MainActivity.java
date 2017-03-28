@@ -675,7 +675,12 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            findViewById(R.id.iv_tracking_status).performClick();
+                            ImageView tracking_status = (ImageView) findViewById(R.id.iv_tracking_status);
+                            if (tracking_status.isSelected()) {
+                                findViewById(R.id.iv_tracking_status).performClick();
+                            }
+
+                            findViewById(R.id.iv_tracking_status).setEnabled(false);
                         }
                     });
                 }
