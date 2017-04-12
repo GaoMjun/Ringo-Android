@@ -1,25 +1,31 @@
 package io.github.gaomjun.gl
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.SurfaceTexture
 import android.opengl.GLES11Ext
 import android.opengl.GLES20.*
 import android.opengl.Matrix
-import android.os.*
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.Looper
+import android.os.Message
 import android.util.AttributeSet
-import android.util.Log
 import android.view.TextureView
+import io.github.gaomjun.gl.Constants.Companion.OriginTransformMatrix
 import io.github.gaomjun.gl.Constants.Companion.TEXTURE_COORDS_PER_VERTEX
 import io.github.gaomjun.gl.Constants.Companion.TEXTURE_STRIDE
 import io.github.gaomjun.gl.Constants.Companion.VERTEX_COORDS_PER_VERTEX
 import io.github.gaomjun.gl.Constants.Companion.VERTEX_STRIDE
+import io.github.gaomjun.gl.GLWrapper.GLWrapper
 import io.github.gaomjun.gl.GLWrapper.MediaCodecGLWrapper
 import io.github.gaomjun.gl.GLWrapper.OffScreenGLWrapper
 import io.github.gaomjun.gl.GLWrapper.SurfaceGLWrapper
-import java.io.File
-import java.io.FileOutputStream
-import java.nio.IntBuffer
+import io.github.gaomjun.glencoder.GLH264Encoder
+import io.github.gaomjun.motionorientation.MotionOrientation.DEVICE_ORIENTATION_LANDSCAPELEFT
+import io.github.gaomjun.motionorientation.MotionOrientation.DEVICE_ORIENTATION_LANDSCAPERIGHT
+import io.github.gaomjun.motionorientation.MotionOrientation.DEVICE_ORIENTATION_PORTRAIT
+import io.github.gaomjun.motionorientation.MotionOrientation.DEVICE_ORIENTATION_UNKNOWN
+import io.github.gaomjun.motionorientation.MotionOrientation.DEVICE_ORIENTATION_UPSIDEDOWN
 
 /**
  * Created by qq on 14/2/2017.
@@ -47,6 +53,9 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
 
     var recording = false
 
+    var orientation: Int? = DEVICE_ORIENTATION_LANDSCAPERIGHT
+    var videoRotation = 0
+
     init {
         println("init")
 
@@ -60,7 +69,7 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
 
         initCameraGLWrapper()
 
-        initMediaCodecGLWrapper()
+//        initMediaCodecGLWrapper()
 
         textureID = TextureHelper.createTexture()
         cameraTexture = SurfaceTexture(textureID!!)
@@ -70,18 +79,19 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
         surfaceAvailableCallback?.invoke(cameraTexture!!)
     }
 
-    private fun initMediaCodecGLWrapper() {
-        mediaCodecGLWrapper = MediaCodecGLWrapper(frameWidth, frameHeight)
+    private fun initMediaCodecGLWrapper(glH264Encoder: GLH264Encoder) {
+        mediaCodecGLWrapper = MediaCodecGLWrapper(glH264Encoder)
         GLHelper.initGLWithWrapper(mediaCodecGLWrapper!!, bufferGLWrapper?.eglContext!!)
         GLHelper.makeGLCurrent(mediaCodecGLWrapper!!)
         mediaCodecGLWrapper?.glProgram = GLHelper.createGLProgram(
-                ShaderHelper.loadShaderCodeFromAssets(context, R.raw.vertex)!!,
+                ShaderHelper.loadShaderCodeFromAssets(context, R.raw.vertex2)!!,
                 ShaderHelper.loadShaderCodeFromAssets(context, R.raw.fragment)!!
         )
         glUseProgram(mediaCodecGLWrapper?.glProgram!!)
         mediaCodecGLWrapper?.textureLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.UNIFORM, mediaCodecGLWrapper?.glProgram!!, "s_texture")
         mediaCodecGLWrapper?.positionLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.ATTRIBUTE, mediaCodecGLWrapper?.glProgram!!, "vPosition")
         mediaCodecGLWrapper?.textureCoordinateLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.ATTRIBUTE, mediaCodecGLWrapper?.glProgram!!, "inputTextureCoordinate")
+        mediaCodecGLWrapper?.transformMatrixLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.UNIFORM, mediaCodecGLWrapper?.glProgram!!, "transformMatrix")
         glUseProgram(0)
     }
 
@@ -90,13 +100,14 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
         GLHelper.initGLWithWrapper(cameraGLWrapper!!, bufferGLWrapper?.eglContext!!)
         GLHelper.makeGLCurrent(cameraGLWrapper!!)
         cameraGLWrapper?.glProgram = GLHelper.createGLProgram(
-                ShaderHelper.loadShaderCodeFromAssets(context, R.raw.vertex)!!,
+                ShaderHelper.loadShaderCodeFromAssets(context, R.raw.vertex2)!!,
                 ShaderHelper.loadShaderCodeFromAssets(context, R.raw.fragment)!!
         )
         glUseProgram(cameraGLWrapper?.glProgram!!)
         cameraGLWrapper?.textureLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.UNIFORM, cameraGLWrapper?.glProgram!!, "s_texture")
         cameraGLWrapper?.positionLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.ATTRIBUTE, cameraGLWrapper?.glProgram!!, "vPosition")
         cameraGLWrapper?.textureCoordinateLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.ATTRIBUTE, cameraGLWrapper?.glProgram!!, "inputTextureCoordinate")
+        cameraGLWrapper?.transformMatrixLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.UNIFORM, cameraGLWrapper?.glProgram!!, "transformMatrix")
         glUseProgram(0)
     }
 
@@ -121,15 +132,19 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
     }
 
     private var moviePath: String? = null
+
     fun startRecord(path: String) {
         moviePath = path
-        recording = true
-        mediaCodecGLWrapper?.glH264Encoder?.start(path)
+
+        renderHandler?.removeMessages(WHAT_INIT_MEIDACODEC)
+        renderHandler?.sendMessage(renderHandler?.obtainMessage(WHAT_INIT_MEIDACODEC))
     }
 
     fun stopRecord(recordStatusCallback: RecordStatusCallback? = null, recordFinish: ((path: String?) -> Unit)? = null) {
         recording = false
         mediaCodecGLWrapper?.glH264Encoder?.stop()
+        renderHandler?.removeMessages(WHAT_UNINIT_MEIDACODEC)
+        renderHandler?.sendMessage(renderHandler?.obtainMessage(WHAT_UNINIT_MEIDACODEC))
         recordStatusCallback?.recordFinish(moviePath)
         recordFinish?.invoke(moviePath)
     }
@@ -138,8 +153,10 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
         fun recordFinish(path: String?)
     }
 
-    private val WHAT_INIT = 0x01
-    private val WHAT_FRAME_REACH = 0x10
+    private val WHAT_INIT = 0x0001
+    private val WHAT_FRAME_REACH = 0x0010
+    private val WHAT_INIT_MEIDACODEC = 0x0100
+    private val WHAT_UNINIT_MEIDACODEC = 0x1000
 
     override fun onSurfaceTextureDestroyed(surface: SurfaceTexture?): Boolean {
         println("onSurfaceTextureDestroyed")
@@ -201,37 +218,88 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
             when(msg?.what) {
                 WHAT_INIT -> {
                     initGL()
+                }
 
-//                    imageTexture = TextureHelper.loadTexture(context!!, R.drawable.pic)
+                WHAT_INIT_MEIDACODEC -> {
+                    when (orientation) {
+                        DEVICE_ORIENTATION_PORTRAIT -> {
+                            videoRotation = 90
+                            initMediaCodecGLWrapper(GLH264Encoder(frameHeight, frameWidth))
+                        }
+
+                        DEVICE_ORIENTATION_UPSIDEDOWN -> {
+                            videoRotation = 270
+                            initMediaCodecGLWrapper(GLH264Encoder(frameHeight, frameWidth))
+                        }
+
+                        DEVICE_ORIENTATION_LANDSCAPERIGHT -> {
+                            videoRotation = 0
+                            initMediaCodecGLWrapper(GLH264Encoder(frameWidth, frameHeight))
+                        }
+
+                        DEVICE_ORIENTATION_LANDSCAPELEFT -> {
+                            videoRotation = 180
+                            initMediaCodecGLWrapper(GLH264Encoder(frameWidth, frameHeight))
+                        }
+                    }
+
+                    recording = true
+                    mediaCodecGLWrapper?.glH264Encoder?.start(moviePath!!)
+                }
+
+                WHAT_UNINIT_MEIDACODEC -> {
+                    if (mediaCodecGLWrapper != null) {
+                        GLHelper.releaseEGL(mediaCodecGLWrapper as GLWrapper)
+                        mediaCodecGLWrapper = null
+                    }
                 }
 
                 WHAT_FRAME_REACH -> {
+                    GLHelper.makeGLCurrent(bufferGLWrapper!!)
+                    cameraTexture?.updateTexImage()
+                    drawFrameBuffer(OriginTransformMatrix)
+
+                    if (recording) {
+                        if (GLHelper.makeGLCurrent(mediaCodecGLWrapper!!)) {
+                            val m = FloatArray(16)
+                            cameraTexture?.getTransformMatrix(m)
+
+                            Matrix.rotateM(m, 0, videoRotation.toFloat(), 0.0F, 0.0F, 1.0F)
+                            when (videoRotation) {
+                                0 -> {
+
+                                }
+
+                                90 -> {
+                                    Matrix.translateM(m, 0, 0.0F, -1.0F, 0.0F)
+                                }
+
+                                180 -> {
+                                    Matrix.translateM(m, 0, -1.0F, -1.0F, 0.0F)
+                                }
+
+                                270 -> {
+                                    Matrix.translateM(m, 0, -1.0F, 0.0F, 0.0F)
+                                }
+                            }
+                            drawMediaCodec(m)
+                        }
+                    }
+
+                    GLHelper.makeGLCurrent(cameraGLWrapper!!)
                     val transformMatrix = FloatArray(16)
                     cameraTexture?.getTransformMatrix(transformMatrix)
-//                    println(Arrays.toString(transformMatrix))
-
                     if (frameHeight >= frameWidth) {
                         Matrix.rotateM(transformMatrix, 0, 90.0F, 0.0F, 0.0F, 1.0F)
                         Matrix.translateM(transformMatrix, 0, 0.0F, -1.0F, 0.0F)
                     }
-
-                    GLHelper.makeGLCurrent(bufferGLWrapper!!)
-                    cameraTexture?.updateTexImage()
-                    drawFrameBuffer(transformMatrix)
-
-                    if (recording) {
-                        GLHelper.makeGLCurrent(mediaCodecGLWrapper!!)
-                        drawMediaCodec()
-                    }
-
-                    GLHelper.makeGLCurrent(cameraGLWrapper!!)
-                    drawScrenn()
+                    drawScrenn(transformMatrix)
                 }
             }
         }
     }
 
-    private fun drawMediaCodec() {
+    private fun drawMediaCodec(transformMatrix: FloatArray) {
 //        println("drawMediaCodec")
         glUseProgram(mediaCodecGLWrapper?.glProgram!!)
 
@@ -239,6 +307,7 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
         glBindTexture(GL_TEXTURE_2D, bufferGLWrapper?.frameBufferTextures!![0])
 
         glUniform1i(mediaCodecGLWrapper?.textureLocation!!, 0)
+        glUniformMatrix4fv(mediaCodecGLWrapper?.transformMatrixLocation!!, 1, false, transformMatrix, 0)
 
         mediaCodecGLWrapper?.vPositionLocationVertex?.enableVertexAttribArray(0, mediaCodecGLWrapper?.positionLocation!!, VERTEX_COORDS_PER_VERTEX, VERTEX_STRIDE)
         mediaCodecGLWrapper?.inputTextureCoordinateLocationVertex?.enableVertexAttribArray(0, mediaCodecGLWrapper?.textureCoordinateLocation!!, TEXTURE_COORDS_PER_VERTEX, TEXTURE_STRIDE)
@@ -280,7 +349,7 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
         glUseProgram(0)
     }
 
-    private fun drawScrenn() {
+    private fun drawScrenn(transformMatrix: FloatArray) {
 //        println("drawScrenn")
         glUseProgram(cameraGLWrapper?.glProgram!!)
 
@@ -288,6 +357,7 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
         glBindTexture(GL_TEXTURE_2D, bufferGLWrapper?.frameBufferTextures!![0])
 
         glUniform1i(cameraGLWrapper?.textureLocation!!, 0)
+        glUniformMatrix4fv(cameraGLWrapper?.transformMatrixLocation!!, 1, false, transformMatrix, 0)
 
         cameraGLWrapper?.vPositionLocationVertex?.enableVertexAttribArray(0, cameraGLWrapper?.positionLocation!!, VERTEX_COORDS_PER_VERTEX, VERTEX_STRIDE)
         cameraGLWrapper?.inputTextureCoordinateLocationVertex?.enableVertexAttribArray(0, cameraGLWrapper?.textureCoordinateLocation!!, TEXTURE_COORDS_PER_VERTEX, TEXTURE_STRIDE)

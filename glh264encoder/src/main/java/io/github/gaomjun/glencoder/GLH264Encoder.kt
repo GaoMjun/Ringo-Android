@@ -11,9 +11,10 @@ import io.github.gaomjun.recorder.Recorder
 /**
  * Created by qq on 20/2/2017.
  */
-class GLH264Encoder(frameWidth: Int, frameHeight: Int) {
-    private val width = frameWidth
-    private val height = frameHeight
+class GLH264Encoder(frameWidth: Int, frameHeight: Int, rotationDegree: Int = 0) {
+    val width = frameWidth
+    val height = frameHeight
+    private val rotation = rotationDegree
     private val fps = 30
     private val bitrate = width * height * 3 * 2
 
@@ -31,7 +32,7 @@ class GLH264Encoder(frameWidth: Int, frameHeight: Int) {
         initEncoder()
     }
 
-    fun start(path: String) {
+    fun start(path: String, success: ((success: Boolean) -> Unit)? = null) {
         hasKeyframe = false
 //        codec?.start()
 
@@ -40,17 +41,21 @@ class GLH264Encoder(frameWidth: Int, frameHeight: Int) {
                 format: MediaFormat ->
                 recorder.videoFormat = format
                 recorder.start(path)
+                success?.invoke(true)
                 videoFormatChanged = null
             }
         } else {
             recorder.videoFormat = videoFormat
             recorder.start(path)
+            success?.invoke(true)
         }
     }
 
     fun stop() {
 //        codec?.stop()
         recorder.stop()
+
+        releaseEncoder()
     }
 
     private fun initEncoder() {
@@ -59,6 +64,7 @@ class GLH264Encoder(frameWidth: Int, frameHeight: Int) {
         format.setInteger(KEY_BIT_RATE, bitrate)
         format.setInteger(KEY_FRAME_RATE, fps)
         format.setInteger(KEY_I_FRAME_INTERVAL, 1)
+        format.setInteger("rotation-degrees", rotation)
 
         codec = createEncoderByType(format.getString(KEY_MIME))
         codec?.setCallback(EncoderCallback())

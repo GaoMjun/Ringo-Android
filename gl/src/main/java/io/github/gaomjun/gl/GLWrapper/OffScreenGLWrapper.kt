@@ -7,7 +7,6 @@ import io.github.gaomjun.gl.VertexArray
  */
 class OffScreenGLWrapper(frameWidth: Int, frameHeight: Int) : GLWrapper() {
     var singleStepOffsetLocation: Int? = null
-    var transformMatrixLocation: Int? = null
 
     var width: Int = frameWidth
     var height: Int = frameHeight

@@ -27,6 +27,8 @@ open class GLWrapper {
     var vPositionLocationVertex: VertexArray? = null
     var inputTextureCoordinateLocationVertex: VertexArray? = null
 
+    var transformMatrixLocation: Int? = null
+
     fun draw() {
         GLES20.glClearColor(0.5F, 0.5F, 0.5F, 1.0F)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)

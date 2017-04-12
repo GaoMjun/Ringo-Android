@@ -12,5 +12,11 @@ class Constants {
         val TEXTURE_COORDS_PER_VERTEX = 4
         val VERTEX_STRIDE = VERTEX_COORDS_PER_VERTEX * BYTES_PER_FLOAT
         val TEXTURE_STRIDE = TEXTURE_COORDS_PER_VERTEX * BYTES_PER_FLOAT
+        val OriginTransformMatrix = floatArrayOf(
+                1.0f, 0.0f, 0.0f, 1.0f,
+                0.0f, 1.0f, 0.0f, 1.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+        )
     }
 }

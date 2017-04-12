@@ -88,8 +88,20 @@ class GLHelper {
             }
         }
 
-        fun makeGLCurrent(wrapper: GLWrapper) {
-            eglMakeCurrent(wrapper.eglDisplay, wrapper.eglSurface, wrapper.eglSurface, wrapper.eglContext)
+        fun makeGLCurrent(wrapper: GLWrapper): Boolean {
+            return eglMakeCurrent(wrapper.eglDisplay, wrapper.eglSurface, wrapper.eglSurface, wrapper.eglContext)
+        }
+
+        fun releaseEGL(wrapper: GLWrapper) {
+            eglMakeCurrent(wrapper.eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)
+
+            eglDestroyContext(wrapper.eglDisplay, wrapper.eglContext)
+            eglDestroySurface(wrapper.eglDisplay, wrapper.eglSurface)
+            eglTerminate(wrapper.eglDisplay)
+
+            wrapper.eglDisplay = EGL_NO_DISPLAY
+            wrapper.eglSurface = EGL_NO_SURFACE
+            wrapper.eglContext = EGL_NO_CONTEXT
         }
 
         fun swapGLBuffer(wrapper: GLWrapper) {

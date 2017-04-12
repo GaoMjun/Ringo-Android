@@ -207,6 +207,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         if (iv_tracking_status.isSelected()) {
 //                        Log.d("iv_tracking_status", "selected");
                             sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_ON);
+                            sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
                             new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                                 @Override
                                 public void run() {

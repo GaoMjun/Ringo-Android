@@ -7,7 +7,7 @@ import io.github.gaomjun.glencoder.GLH264Encoder
 /**
  * Created by qq on 7/3/2017.
  */
-class MediaCodecGLWrapper(frameWidth: Int, frameHeight: Int) : GLWrapper() {
+class MediaCodecGLWrapper(h264Encoder: GLH264Encoder?) : GLWrapper() {
     val surface: Surface?
 
     var glH264Encoder: GLH264Encoder? = null
@@ -16,7 +16,8 @@ class MediaCodecGLWrapper(frameWidth: Int, frameHeight: Int) : GLWrapper() {
         vPositionLocationVertex = VertexArray(squareCoords)
         inputTextureCoordinateLocationVertex = VertexArray(textureVertices)
 
-        glH264Encoder = GLH264Encoder(frameWidth, frameHeight)
+        glH264Encoder = h264Encoder
+
         surface = glH264Encoder?.inputSurface
     }
 
