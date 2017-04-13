@@ -31,7 +31,7 @@ public class CameraEngine {
     private volatile static CameraEngine instance = null;
     public static int CAMERA_BACK = 0;
     public static int CAMERA_FRONT = 1;
-    private int cameraId = CAMERA_BACK;
+    private int cameraId = CAMERA_FRONT;
     private static SurfaceTexture surfaceTexture;
     public static int previewWidth;
     public static int previewHeight;
