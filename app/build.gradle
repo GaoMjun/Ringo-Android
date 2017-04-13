@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'bugly'
+apply plugin: 'com.jakewharton.butterknife'
 
 android {
     compileSdkVersion 24
@@ -27,7 +28,7 @@ android {
             applicationVariants.all { variant ->
                 variant.outputs.each { output ->
                     project.ext { appName = 'Ringo' }
-                    def formattedDate = new Date().format('yyyyMMddHHmmss')
+                    def formattedDate = new Date().format('yyyy.MM.dd.HH:mm:ss')
                     def newName = output.outputFile.name
 
                     newName = newName.replace("app-", "$project.ext.appName-")
@@ -62,6 +63,9 @@ dependencies {
     compile project(':gallary')
     compile project(':yuv_decoder')
     compile project(':gl')
+    compile project(':motionorientation')
+    compile 'com.jakewharton:butterknife:8.5.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
 }
 
 repositories {

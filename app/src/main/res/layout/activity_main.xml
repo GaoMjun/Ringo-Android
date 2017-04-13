@@ -68,6 +68,7 @@
     </RelativeLayout>
 
     <LinearLayout
+        android:id="@+id/leftbar"
         android:layout_width="60dp"
         android:layout_height="match_parent"
         android:layout_alignParentLeft="true"
@@ -105,6 +106,7 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/rightbar"
         android:layout_width="60dp"
         android:layout_height="match_parent"
         android:layout_alignParentRight="true"

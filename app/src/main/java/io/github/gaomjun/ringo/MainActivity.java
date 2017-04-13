@@ -25,23 +25,22 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.view.TextureView;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.daimajia.androidanimations.library.Techniques;
 import com.daimajia.androidanimations.library.YoYo;
-import com.tencent.bugly.crashreport.CrashReport;
 
 import org.jetbrains.annotations.NotNull;
-import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
-import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -53,6 +52,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+import butterknife.OnTouch;
 import io.github.gaomjun.blecommunication.BLECommunication.BLEDriven;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.GimbalMobileBLEProtocol;
 import io.github.gaomjun.blecommunication.BLECommunication.Message.RecvMessage;
@@ -63,25 +66,28 @@ import io.github.gaomjun.cvcamera.CVCamera;
 import io.github.gaomjun.gallary.gallary_grid.ui.GallaryGridActivity;
 import io.github.gaomjun.gl.GLTextureView;
 import io.github.gaomjun.gl.OffScreenRenderer;
-import io.github.gaomjun.live.rtmpClient.RTMPClient;
+import io.github.gaomjun.motionorientation.MotionOrientation;
 import io.github.gaomjun.ringo.BluetoothDevicesList.Adapter.BluetoothDevicesListAdapter;
 import io.github.gaomjun.ringo.BluetoothDevicesList.DataSource.BluetoothDevicesListDataSource;
 import io.github.gaomjun.timelabel.TimeLabel;
 import io.github.gaomjun.utils.TypeConversion.TypeConversion;
 import pub.devrel.easypermissions.EasyPermissions;
 
+import static io.github.gaomjun.motionorientation.MotionOrientation.getDEVICE_ORIENTATION_LANDSCAPELEFT;
+import static io.github.gaomjun.motionorientation.MotionOrientation.getDEVICE_ORIENTATION_LANDSCAPERIGHT;
+import static io.github.gaomjun.motionorientation.MotionOrientation.getDEVICE_ORIENTATION_PORTRAIT;
+import static io.github.gaomjun.motionorientation.MotionOrientation.getDEVICE_ORIENTATION_UPSIDEDOWN;
+
 public class MainActivity extends AppCompatActivity implements CVCamera.FrameCallback,
-        EasyPermissions.PermissionCallbacks {
+        EasyPermissions.PermissionCallbacks,
+        MotionOrientation.DeviceOrientationListener {
     private static final int REQUEST_BLUETOOTH_ON_CODE = 11;
     private TimeLabel timeLabel = new TimeLabel();
     private BLEDriven bleDriven = null;
     private SendMessage sendMessage = SendMessage.getInstance();
 
-    private RecyclerView bluetoothDevicesListRecyclerView;
-    private TextView recordTimeLabel;
     private BluetoothDevicesListAdapter bluetoothDevicesListAdapter;
-    private BluetoothDevicesListDataSource bluetoothDevicesListDataSource =
-            new BluetoothDevicesListDataSource();
+    private BluetoothDevicesListDataSource bluetoothDevicesListDataSource = new BluetoothDevicesListDataSource();
     private List<BluetoothDevice> bluetoothDeviceList = new ArrayList<>();
     private BluetoothDevice bluetoothDevice;
 
@@ -97,177 +103,252 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     private ViewUtils trackingBoxUtils;
     private CMTTracker cmtTracker = null;
-    private View trackingBox;
-    private ImageView testImageView;
-    private GLTextureView cameraView = null;
     private CVCamera cvCamera = null;
     private CameraEngine cameraEngine = null;
 
-    private boolean canSwitchTrackingStatus = true;
-    private View.OnClickListener btn_listener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            switch (v.getId()) {
-                case R.id.iv_capture:
-                    {
-                        ImageView imageView = (ImageView) findViewById(R.id.iv_capture);
-                        Integer tag = (Integer) imageView.getTag();
+    @BindView(R2.id.testImageView) ImageView testImageView;
+    @BindView(R2.id.bluetooth_devices_list_view) RelativeLayout bluetooth_devices_list_view;
+    @BindView(R2.id.trackingBox) View trackingBox;
+    @BindView(R2.id.recordTimeLabel) TextView recordTimeLabel;
+    @BindView(R2.id.bluetooth_devices_list) RecyclerView bluetooth_devices_list;
 
-                        if ((tag == null) || tag == R.drawable.iv_capture) {
-                            YoYo.with(Techniques.Flash)
-                                    .duration(200)
-                                    .playOn(cameraView);
-                            takePicture();
+    @BindView(R2.id.cameraView) GLTextureView cameraView;
 
-                        } else {
-                            if (!cameraView.getRecording()) {
-                                // start record
-                                if (startRecord()) {
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Toast.makeText(getApplicationContext(),
-                                                    "start record", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                                    imageView.setSelected(!imageView.isSelected());
-                                    {
-                                        // disable some button
-                                        findViewById(R.id.iv_switch_camera_mode).setEnabled(false);
-                                        findViewById(R.id.iv_switch_camera).setEnabled(false);
-                                        findViewById(R.id.iv_album).setEnabled(false);
-                                    }
+    @BindView(R2.id.leftbar) LinearLayout leftbar;
+    @BindView(R2.id.iv_switch_camera_mode) ImageView iv_switch_camera_mode;
+    @BindView(R2.id.iv_capture) ImageView iv_capture;
+    @BindView(R2.id.iv_switch_camera) ImageView iv_switch_camera;
+
+    @BindView(R2.id.rightbar) LinearLayout rightbar;
+    @BindView(R2.id.iv_ble) ImageView iv_ble;
+    @BindView(R2.id.iv_tracking_status) ImageView iv_tracking_status;
+    @BindView(R2.id.iv_album) ImageView iv_album;
+
+    @BindView(R2.id.bluetooth_devices_list_close) ImageView bluetooth_devices_list_close;
+
+    @OnClick({R2.id.iv_switch_camera_mode,
+            R2.id.iv_capture,
+            R2.id.iv_switch_camera,
+            R2.id.iv_ble,
+            R2.id.iv_tracking_status,
+            R2.id.iv_album,
+            R2.id.bluetooth_devices_list_close})
+    public void clickAction(View v) {
+        switch (v.getId()) {
+            case R.id.iv_capture:
+            {
+                Integer tag = (Integer) iv_capture.getTag();
+
+                if ((tag == null) || tag == R.drawable.iv_capture) {
+                    YoYo.with(Techniques.Flash)
+                            .duration(200)
+                            .playOn(cameraView);
+                    takePicture();
+
+                } else {
+                    if (!cameraView.getRecording()) {
+                        // start record
+                        if (startRecord()) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(getApplicationContext(),
+                                            "start record", Toast.LENGTH_SHORT).show();
                                 }
-
-                            } else {
-                                // stop record
-                                stopRecord();
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(MainActivity.this,
-                                                "stop record", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                                imageView.setSelected(!imageView.isSelected());
-                                {
-                                    // enable disabled button
-                                    findViewById(R.id.iv_switch_camera_mode).setEnabled(true);
-                                    findViewById(R.id.iv_switch_camera).setEnabled(true);
-                                    findViewById(R.id.iv_album).setEnabled(true);
-                                }
+                            });
+                            iv_capture.setSelected(!iv_capture.isSelected());
+                            {
+                                // disable some button
+                                iv_switch_camera_mode.setEnabled(false);
+                                iv_switch_camera.setEnabled(false);
+                                iv_album.setEnabled(false);
                             }
                         }
-                    }
 
-                    break;
-                case R.id.iv_switch_camera:
-                    //TODO animation
+                    } else {
+                        // stop record
+                        stopRecord();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this,
+                                        "stop record", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                        iv_capture.setSelected(!iv_capture.isSelected());
+                        {
+                            // enable disabled button
+                            iv_switch_camera_mode.setEnabled(true);
+                            iv_switch_camera.setEnabled(true);
+                            iv_album.setEnabled(true);
+                        }
+                    }
+                }
+            }
+
+            break;
+            case R.id.iv_switch_camera:
+                //TODO animation
 //                    cameraEngine.stopPreview();
 //                    YoYo.with(Techniques.FlipInY)
 //                            .duration(200)
 //                            .playOn(cameraView);
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            cameraEngine.switchCamera();
-                        }
-                    }).start();
-                    break;
-                case R.id.bluetooth_devices_list_close:
-                    findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.GONE);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraEngine.switchCamera();
+                    }
+                }).start();
+                break;
+            case R.id.bluetooth_devices_list_close:
+                bluetooth_devices_list_view.setVisibility(View.GONE);
+                bleDriven.stopScanDevices();
+                break;
+            case R.id.iv_ble:
+                // check bluetooth is available
+                if (!bleDriven.bluetoothIsAvailable) {
+                    Log.d("R.id.iv_ble", "bluetooth is not available");
+                    //TODO request opening on bluetooth
+                    startActivityForResult(
+                            new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), REQUEST_BLUETOOTH_ON_CODE);
+                    return;
+                }
+
+                if (bluetooth_devices_list_view.getVisibility() == View.GONE) {
+                    bluetooth_devices_list_view.setVisibility(View.VISIBLE);
+                    datasourceChanged(new ArrayList<BluetoothDevice>(), bluetoothDevice);
+                    bleDriven.scanDevices();
+                } else {
+                    bluetooth_devices_list_view.setVisibility(View.GONE);
                     bleDriven.stopScanDevices();
-                    break;
-                case R.id.iv_ble:
-                    // check bluetooth is available
-                    if (!bleDriven.bluetoothIsAvailable) {
-                        Log.d("R.id.iv_ble", "bluetooth is not available");
-                        //TODO request opening on bluetooth
-                        startActivityForResult(
-                                new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), REQUEST_BLUETOOTH_ON_CODE);
-                        return;
-                    }
+                }
 
-                    if (findViewById(R.id.bluetooth_devices_list_view).getVisibility() == View.GONE) {
-                        findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.VISIBLE);
-                        datasourceChanged(new ArrayList<BluetoothDevice>(), bluetoothDevice);
-                        bleDriven.scanDevices();
-                    } else {
-                        findViewById(R.id.bluetooth_devices_list_view).setVisibility(View.GONE);
-                        bleDriven.stopScanDevices();
-                    }
+                break;
+            case R.id.iv_tracking_status:
+                if (canSwitchTrackingStatus) {
+                    canSwitchTrackingStatus = false;
 
-                    break;
-                case R.id.iv_tracking_status:
-                    if (canSwitchTrackingStatus) {
-                        canSwitchTrackingStatus = false;
-
-                        ImageView iv_tracking_status = (ImageView) findViewById(R.id.iv_tracking_status);
-                        iv_tracking_status.setSelected(!iv_tracking_status.isSelected());
-                        if (iv_tracking_status.isSelected()) {
+                    iv_tracking_status.setSelected(!iv_tracking_status.isSelected());
+                    if (iv_tracking_status.isSelected()) {
 //                        Log.d("iv_tracking_status", "selected");
-                            sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_ON);
-                            sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
-                            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    canSwitchTrackingStatus = true;
-                                }
-                            }, 500);
-                        } else {
-//                        Log.d("iv_tracking_status", "no selected");
-                            sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_OFF);
-                            sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
-                            new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    canSwitchTrackingStatus = true;
-                                }
-                            }, 500);
-                            canTrackerInit = false;
-                            startTracking = false;
-                            if (trackingBox.getVisibility() != View.GONE) {
-                                trackingBox.setVisibility(View.GONE);
+                        sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_ON);
+                        sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
+                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                canSwitchTrackingStatus = true;
                             }
-
+                        }, 500);
+                    } else {
+//                        Log.d("iv_tracking_status", "no selected");
+                        sendMessage.setTrackingFlag(GimbalMobileBLEProtocol.TRACKING_FLAG_OFF);
+                        sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
+                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                canSwitchTrackingStatus = true;
+                            }
+                        }, 500);
+                        canTrackerInit = false;
+                        startTracking = false;
+                        if (trackingBox.getVisibility() != View.GONE) {
+                            trackingBox.setVisibility(View.GONE);
                         }
-                    }
-                    break;
-                case R.id.iv_switch_camera_mode:
-                    {
-                        ImageView imageView = (ImageView) findViewById(R.id.iv_switch_camera_mode);
-                        Integer tag = (Integer) imageView.getTag();
-                        if ((tag == null) || tag == R.drawable.camera_mode_photo) {
-                            imageView.setImageResource(R.drawable.camera_mode_video);
-                            imageView.setTag(R.drawable.camera_mode_video);
-                            imageView.setScaleX((float) 0.8);
-                            imageView.setScaleY((float) 0.8);
 
-                            imageView = (ImageView) findViewById(R.id.iv_capture);
-                            imageView.setImageResource(R.drawable.iv_record);
-                            imageView.setTag(R.drawable.iv_record);
-                        } else {
-                            imageView.setImageResource(R.drawable.camera_mode_photo);
-                            imageView.setTag(R.drawable.camera_mode_photo);
-                            imageView.setScaleX((float) 0.9);
-                            imageView.setScaleY((float) 0.9);
-
-                            imageView = (ImageView) findViewById(R.id.iv_capture);
-                            imageView.setImageResource(R.drawable.iv_capture);
-                            imageView.setTag(R.drawable.iv_capture);
-                        }
                     }
-                    break;
-                case R.id.iv_album:
-                    startActivity(new Intent(MainActivity.this, GallaryGridActivity.class));
-                    break;
+                }
+                break;
+            case R.id.iv_switch_camera_mode:
+            {
+                Integer tag = (Integer) iv_switch_camera_mode.getTag();
+                if ((tag == null) || tag == R.drawable.camera_mode_photo) {
+                    iv_switch_camera_mode.setImageResource(R.drawable.camera_mode_video);
+                    iv_switch_camera_mode.setTag(R.drawable.camera_mode_video);
+                    iv_switch_camera_mode.setScaleX((float) 0.8);
+                    iv_switch_camera_mode.setScaleY((float) 0.8);
+
+                    iv_capture.setImageResource(R.drawable.iv_record);
+                    iv_capture.setTag(R.drawable.iv_record);
+                } else {
+                    iv_switch_camera_mode.setImageResource(R.drawable.camera_mode_photo);
+                    iv_switch_camera_mode.setTag(R.drawable.camera_mode_photo);
+                    iv_switch_camera_mode.setScaleX((float) 0.9);
+                    iv_switch_camera_mode.setScaleY((float) 0.9);
+
+                    iv_capture.setImageResource(R.drawable.iv_capture);
+                    iv_capture.setTag(R.drawable.iv_capture);
+                }
             }
+            break;
+            case R.id.iv_album:
+                startActivity(new Intent(MainActivity.this, GallaryGridActivity.class));
+                break;
         }
-    };
+    }
+
+    @OnTouch(R2.id.activity_main)
+    public boolean touchAction(View v, MotionEvent event) {
+        if (canTracking == false) return true;
+
+        final Point point = new Point(event.getX(), event.getY());
+        Log.d("OnTouch", point.toString());
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                startPoint.x = point.x;
+                startPoint.y = point.y;
+
+                trackingBoxUtils.setX((int) startPoint.x, 0);
+                trackingBoxUtils.setY((int) startPoint.y, 0);
+
+//                    Log.d("MotionEvent", "touch start" + startPoint.toString());
+
+            {
+                canTrackerInit = false;
+                startTracking = false;
+                trackingBox.setVisibility(View.GONE);
+            }
+            break;
+            case MotionEvent.ACTION_MOVE:
+                endPoint.x = point.x;
+                endPoint.y = point.y;
+
+                trackingBox.setVisibility(View.VISIBLE);
+                trackingBoxUtils.setWidth((int) Math.abs(startPoint.x - endPoint.x), 0);
+                trackingBoxUtils.setHeight((int) Math.abs(startPoint.y - endPoint.y), 0);
+
+//                    Log.d("MotionEvent", "touch move" + endPoint.toString());
+                break;
+            case MotionEvent.ACTION_UP:
+                endPoint.x = point.x;
+                endPoint.y = point.y;
+
+                if (Math.abs(startPoint.x - endPoint.x) > 100 &&
+                        Math.abs(startPoint.y - endPoint.y) > 100) {
+                    canTrackerInit = true;
+                    // save box
+                    boxWidth = Math.abs(startPoint.x - endPoint.x);
+                    boxHeight =  Math.abs(startPoint.y - endPoint.y);
+                } else {
+                    canTrackerInit = false;
+                    startTracking = false;
+                    Log.d("OnTouch", "selected box is too small");
+                    sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
+
+                }
+                trackingBoxUtils.setRect(0, 0, 0, 0, 0);
+                trackingBox.setVisibility(View.GONE);
+//                    Log.d("MotionEvent", "touch end" + endPoint.toString());
+                break;
+        }
+
+        return true;
+    }
+
+    private boolean canSwitchTrackingStatus = true;
+
     private boolean canCapture = true;
     private boolean canRecord = true;
     private boolean allPermissionGranted = false;
-    private SurfaceTexture surfaceTexture;
 
     private void takePicture() {
         cameraEngine.takePicture(new Camera.PictureCallback() {
@@ -285,10 +366,32 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                             if (cameraEngine.isFrontCamera()) {
                                 matrix.postScale(-1.0f, 1.0f);
                             }
-                            if (cameraView.getHeight() > cameraView.getWidth()) {
-                                matrix.postRotate(-90.0f);
-                            } else {
-                                matrix.postRotate(180.0f);
+                            int deviceOrientation = MotionOrientation.getDEVICE_ORIENTATION();
+//                            Log.d("takePicture", deviceOrientation + "");
+                            switch (deviceOrientation) {
+                                case 1: {
+                                    matrix.postRotate(270.0F);
+                                    break;
+                                }
+
+                                case 2: {
+                                    matrix.postRotate(90.0F);
+                                    break;
+                                }
+
+                                case 3: {
+                                    matrix.postRotate(180.0F);
+                                    break;
+                                }
+
+                                case 4: {
+                                    break;
+                                }
+
+                                default: {
+                                    matrix.postRotate(270.0F);
+                                    break;
+                                }
                             }
                             Bitmap bitmapFix = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
                             savePhotoToAlbum(bitmapFix);
@@ -308,16 +411,6 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private void stopRecord() {
         timeLabel.stop();
         recordTimeLabel.setVisibility(View.GONE);
-
-//        cameraEngine.stopRecord(new CameraEngine.RecordStatusCallback() {
-//            @Override
-//            public void recordFinish(String moviePath) {
-//                Log.d("recordFinish", moviePath);
-//                MainActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-//                        Uri.parse("file://" + moviePath)));
-//
-//            }
-//        });
 
         cameraView.stopRecord(new GLTextureView.RecordStatusCallback() {
             @Override
@@ -359,7 +452,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            findViewById(R.id.iv_capture).performClick();
+                            iv_capture.performClick();
                         }
                     });
                 }
@@ -372,7 +465,6 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
         String currentTimeString = new SimpleDateFormat("yyyyMMddHHmmSS").format(new Date());
         String moviePath = ringoDirectory + "/" + currentTimeString + ".mp4";
-//        cameraEngine.startRecord(moviePath);
         cameraView.startRecord(moviePath);
 
         return true;
@@ -470,64 +562,6 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     private double boxWidth = 0;
     private double boxHeight = 0;
-    private View.OnTouchListener onTouchListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            if (canTracking == false) return true;
-
-            final Point point = new Point(event.getX(), event.getY());
-            Log.d("OnTouch", point.toString());
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    startPoint.x = point.x;
-                    startPoint.y = point.y;
-
-                    trackingBoxUtils.setX((int) startPoint.x, 0);
-                    trackingBoxUtils.setY((int) startPoint.y, 0);
-
-//                    Log.d("MotionEvent", "touch start" + startPoint.toString());
-
-                    {
-                        canTrackerInit = false;
-                        startTracking = false;
-                        trackingBox.setVisibility(View.GONE);
-                    }
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    endPoint.x = point.x;
-                    endPoint.y = point.y;
-
-                    trackingBox.setVisibility(View.VISIBLE);
-                    trackingBoxUtils.setWidth((int) Math.abs(startPoint.x - endPoint.x), 0);
-                    trackingBoxUtils.setHeight((int) Math.abs(startPoint.y - endPoint.y), 0);
-
-//                    Log.d("MotionEvent", "touch move" + endPoint.toString());
-                    break;
-                case MotionEvent.ACTION_UP:
-                    endPoint.x = point.x;
-                    endPoint.y = point.y;
-
-                    if (Math.abs(startPoint.x - endPoint.x) > 100 &&
-                        Math.abs(startPoint.y - endPoint.y) > 100) {
-                        canTrackerInit = true;
-                        // save box
-                        boxWidth = Math.abs(startPoint.x - endPoint.x);
-                        boxHeight =  Math.abs(startPoint.y - endPoint.y);
-                    } else {
-                        canTrackerInit = false;
-                        startTracking = false;
-                        Log.d("OnTouch", "selected box is too small");
-                        sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
-
-                    }
-                    trackingBoxUtils.setRect(0, 0, 0, 0, 0);
-                    trackingBox.setVisibility(View.GONE);
-//                    Log.d("MotionEvent", "touch end" + endPoint.toString());
-                    break;
-            }
-            return true;
-        }
-    };
     private boolean canTrackerInit = false;
     private boolean startTracking = false;
 
@@ -558,6 +592,25 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         return false;
     }
 
+    @Override
+    public void deviceOrientationChanged(int orientaion) {
+
+    }
+
+    @Override
+    public void deviceOrientationChangedFromTo(int from, int to) {
+        if (to == getDEVICE_ORIENTATION_PORTRAIT() ||
+                to == getDEVICE_ORIENTATION_UPSIDEDOWN() ||
+                to == getDEVICE_ORIENTATION_LANDSCAPERIGHT() ||
+                to == getDEVICE_ORIENTATION_LANDSCAPELEFT()) {
+            cameraView.setOrientation(to);
+        }
+
+//        YoYo.with(Techniques.Rotate90)
+//                .duration(100)
+//                .playOn()
+    }
+
     private class RecvDataListener implements BLEDriven.RecvCallback {
 
         @Override
@@ -575,22 +628,20 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     Log.d("onRecvData", "capture action");
                     {
                         if (!cameraView.getRecording()) {
-                            final ImageView switch_camera_mode =
-                                    (ImageView) findViewById(R.id.iv_switch_camera_mode);
-                            Integer tag = (Integer) switch_camera_mode.getTag();
+                            Integer tag = (Integer) iv_switch_camera_mode.getTag();
                             if ((tag != null) && (tag != R.drawable.camera_mode_photo)) {
-                                switch_camera_mode.post(new Runnable() {
+                                iv_switch_camera_mode.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        switch_camera_mode.performClick();
+                                        iv_switch_camera_mode.performClick();
                                     }
                                 });
                             }
 
-                            findViewById(R.id.iv_capture).post(new Runnable() {
+                            iv_capture.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    findViewById(R.id.iv_capture).performClick();
+                                    iv_capture.performClick();
                                 }
                             });
                         } else {
@@ -621,22 +672,20 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     canRecord = false;
                     Log.d("onRecvData", "record action");
                     {
-                        final ImageView switch_camera_mode =
-                                (ImageView) findViewById(R.id.iv_switch_camera_mode);
-                        Integer tag = (Integer) switch_camera_mode.getTag();
+                        Integer tag = (Integer) iv_switch_camera_mode.getTag();
                         if ((tag == null) || (tag != R.drawable.camera_mode_video)) {
-                            switch_camera_mode.post(new Runnable() {
+                            iv_switch_camera_mode.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    switch_camera_mode.performClick();
+                                    iv_switch_camera_mode.performClick();
                                 }
                             });
                         }
 
-                        findViewById(R.id.iv_capture).post(new Runnable() {
+                        iv_capture.post(new Runnable() {
                             @Override
                             public void run() {
-                                findViewById(R.id.iv_capture).performClick();
+                                iv_capture.performClick();
                             }
                         });
                     }
@@ -651,10 +700,10 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
             } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_SWITCH)) {
                 Log.d("onRecvData", "swich camera action");
-                findViewById(R.id.iv_switch_camera).post(new Runnable() {
+                iv_switch_camera.post(new Runnable() {
                     @Override
                     public void run() {
-                        findViewById(R.id.iv_switch_camera).performClick();
+                        iv_switch_camera.performClick();
                     }
                 });
                 sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_SWITCH_OK);
@@ -667,21 +716,20 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
             if (Arrays.equals(gimbalStatus, GimbalMobileBLEProtocol.GIMBALSTATUS_RUN)) {
                 // enable switch tracking status button
-                if (!findViewById(R.id.iv_tracking_status).isEnabled())
-                    findViewById(R.id.iv_tracking_status).setEnabled(true);
+                if (!iv_tracking_status.isEnabled())
+                    iv_tracking_status.setEnabled(true);
             } else {
                 // diable switch tracking status button
-                if (findViewById(R.id.iv_tracking_status).isEnabled()) {
+                if (iv_tracking_status.isEnabled()) {
 
                     MainActivity.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            ImageView tracking_status = (ImageView) findViewById(R.id.iv_tracking_status);
-                            if (tracking_status.isSelected()) {
-                                findViewById(R.id.iv_tracking_status).performClick();
+                            if (iv_tracking_status.isSelected()) {
+                                iv_tracking_status.performClick();
                             }
 
-                            findViewById(R.id.iv_tracking_status).setEnabled(false);
+                            iv_tracking_status.setEnabled(false);
                         }
                     });
                 }
@@ -696,8 +744,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 MainActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (findViewById(R.id.iv_tracking_status).isSelected()) {
-                            findViewById(R.id.iv_tracking_status).performClick();
+                        if (iv_tracking_status.isSelected()) {
+                            iv_tracking_status.performClick();
                         }
                     }
                 });
@@ -716,17 +764,15 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         @Override
                         public void run() {
                             progressBar_connecting_ble_device.setVisibility(View.GONE);
-                            findViewById(R.id.iv_tracking_status).setEnabled(true);
+                            iv_tracking_status.setEnabled(true);
                         }
                     });
 
-                    findViewById(R.id.bluetooth_devices_list_view).postDelayed(new Runnable() {
+                    bluetooth_devices_list_view.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            if (findViewById(R.id.bluetooth_devices_list_view).getVisibility() !=
-                                    View.GONE) {
-                                findViewById(R.id.bluetooth_devices_list_view).setVisibility(
-                                        View.GONE);
+                            if (bluetooth_devices_list_view.getVisibility() != View.GONE) {
+                                bluetooth_devices_list_view.setVisibility(View.GONE);
                             }
                         }
                     }, 1000);
@@ -734,10 +780,10 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     break;
                 case BLEDriven.CONNECTING:
                     Log.d("onConnecting", "CONNECTING");
-                    findViewById(R.id.iv_tracking_status).setEnabled(false);
+                    iv_tracking_status.setEnabled(false);
                     break;
                 case BLEDriven.DISCONNECTED:
-                    findViewById(R.id.iv_tracking_status).setEnabled(false);
+                    iv_tracking_status.setEnabled(false);
 //                    bluetoothDevice = null;
 //                    datasourceChanged(bluetoothDeviceList, bluetoothDevice);
                     Log.d("onConnecting", "DISCONNECTED");
@@ -771,6 +817,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         checkPermission();
@@ -822,6 +869,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         cameraEngine.context = MainActivity.this;
     }
 
+    private MotionOrientation motionOrientation;
     @Override
     protected void onResume() {
         super.onResume();
@@ -829,7 +877,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         if ((cameraView != null) && (cameraEngine != null)) {
             SurfaceTexture cameraTexture = cameraView.getCameraTexture();
             if (cameraTexture != null) {
-                cameraEngine.openCamera(CameraEngine.CAMERA_FRONT);
+                cameraEngine.openCamera();
                 cameraEngine.startPreview(cameraTexture);
             } else {
                 cameraView.setSurfaceTextureCallback(new GLTextureView.SurfaceTextureListener() {
@@ -837,7 +885,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     @Override
                     public void onTextureAvailable(@NotNull final SurfaceTexture texture) {
                         Log.d("SurfaceTextureListener", "onSurfaceTextureAvailable");
-                        MainActivity.this.surfaceTexture = texture;
+//                        MainActivity.this.surfaceTexture = texture;
                         if (allPermissionGranted) {
                             new Thread(new Runnable() {
                                 @Override
@@ -873,44 +921,11 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     }
                 });
             }
-//            cameraView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
-//                @Override
-//                public void onSurfaceTextureAvailable(final SurfaceTexture surfaceTexture,
-//                                                      int width, int height) {
-//                    Log.d("SurfaceTextureListener", "onSurfaceTextureAvailable");
-//                    MainActivity.this.surfaceTexture = surfaceTexture;
-//                    if (allPermissionGranted) {
-//                        new Thread(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                cameraEngine.openCamera();
-//                                cameraEngine.startPreview(surfaceTexture);
-//                            }
-//                        }).start();
-//                    }
-//                }
-//
-//                @Override
-//                public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture,
-//                                                        int width, int height) {
-//                    Log.d("SurfaceTextureListener", "onSurfaceTextureSizeChanged");
-//
-//                }
-//
-//                @Override
-//                public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-//                    Log.d("SurfaceTextureListener", "onSurfaceTextureDestroyed");
-//                    if (cameraEngine != null)
-//                        cameraEngine.releaseCamera();
-//
-//                    return true;
-//                }
-//
-//                @Override
-//                public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-//
-//                }
-//            });
+        }
+
+        motionOrientation = MotionOrientation.init(this);
+        if (motionOrientation != null) {
+            motionOrientation.setDeviceOrientationListener(this);
         }
     }
 
@@ -934,6 +949,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         if (cameraEngine != null) {
             cameraEngine.releaseCamera();
         }
+
+        motionOrientation.releaseSensor();
     }
 
     private Long pressBackTimePre = 0L;
@@ -968,40 +985,21 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         SCREEN_HEIGHT = getWindowManager().getDefaultDisplay().getHeight();
         SCALE = SCREEN_WIDTH / 128;
 
-        cameraView = (GLTextureView) findViewById(R.id.cameraView);
+        iv_tracking_status.setEnabled(false);
 
-        findViewById(R.id.iv_capture).setOnClickListener(btn_listener);
-        findViewById(R.id.iv_switch_camera).setOnClickListener(btn_listener);
-        findViewById(R.id.iv_switch_camera_mode).setOnClickListener(btn_listener);
-        findViewById(R.id.iv_tracking_status).setOnClickListener(btn_listener);
-        findViewById(R.id.iv_ble).setOnClickListener(btn_listener);
-        findViewById(R.id.iv_album).setOnClickListener(btn_listener);
-        findViewById(R.id.bluetooth_devices_list_close).setOnClickListener(btn_listener);
-
-        findViewById(R.id.iv_tracking_status).setEnabled(false);
-
-        testImageView = (ImageView) findViewById(R.id.testImageView);
-
-        trackingBox = findViewById(R.id.trackingBox);
         trackingBoxUtils = new ViewUtils(trackingBox);
-
-        findViewById(R.id.activity_main).setOnTouchListener(onTouchListener);
-
-        recordTimeLabel = (TextView) findViewById(R.id.recordTimeLabel);
 
         initBluetoothDevicesList();
     }
 
     private void initBluetoothDevicesList() {
-        bluetoothDevicesListRecyclerView = (RecyclerView) findViewById(R.id.bluetooth_devices_list);
-
-        bluetoothDevicesListRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        bluetooth_devices_list.setLayoutManager(new LinearLayoutManager(this));
 
         bluetoothDevicesListAdapter = new BluetoothDevicesListAdapter(this);
         bluetoothDevicesListAdapter.setDataSource(
                 bluetoothDevicesListDataSource.getBluetoothDevicesListData());
         bluetoothDevicesListAdapter.setCellClickCallback(cellOnClickListener);
-        bluetoothDevicesListRecyclerView.setAdapter(bluetoothDevicesListAdapter);
+        bluetooth_devices_list.setAdapter(bluetoothDevicesListAdapter);
     }
 
     @Override
@@ -1158,7 +1156,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     new Handler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            findViewById(R.id.iv_ble).performClick();
+                            iv_ble.performClick();
                         }
                     }, 500);
                 }
