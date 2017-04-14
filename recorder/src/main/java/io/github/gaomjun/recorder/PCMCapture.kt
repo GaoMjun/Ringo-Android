@@ -26,6 +26,20 @@ class PCMCapture {
     private var saveToFile = false
     private var bufferedOutputStream: BufferedOutputStream? = null
 
+    private var SAMPLE_RATE = 44100
+    private var CHANNEL_NUM = 2
+    private var BITS_PER_SAMPLE = 16
+    private var LENGTH_PER_READ = 4096
+
+    constructor()
+
+    constructor(audioConfiguration: AudioConfiguration) {
+        SAMPLE_RATE = audioConfiguration.SAMPLE_RATE
+        CHANNEL_NUM = audioConfiguration.CHANNEL_NUM
+        BITS_PER_SAMPLE = audioConfiguration.BITS_PER_SAMPLE
+        LENGTH_PER_READ = audioConfiguration.LENGTH_PER_READ
+    }
+
     fun start() {
         initAudiorecord()
 
@@ -76,7 +90,7 @@ class PCMCapture {
                     offset += len!!
 
                     if (len!! > 0) {
-                        println("audioRecord $len")
+//                        println("audioRecord $len")
 
                         pcmDataCallback?.onPCMData(pcmData!!, len, System.nanoTime())
 
@@ -129,11 +143,4 @@ class PCMCapture {
     }
 
     var pcmDataCallback: PCMDataCallback? = null
-
-    companion object {
-        private val SAMPLE_RATE = 44100
-        private val CHANNEL_NUM = 2
-        private val BITS_PER_SAMPLE = 16
-        private val LENGTH_PER_READ = 4096
-    }
 }

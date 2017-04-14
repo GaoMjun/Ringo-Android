@@ -30,6 +30,20 @@ class AACEncoder : PCMCapture.PCMDataCallback {
     private var saveToFile = false
     private var bufferedOutputStream: BufferedOutputStream? = null
 
+    private var SAMPLE_RATE = 44100
+    private var CHANNELS = 2
+    private var BITRATE = 192000
+    private var MAX_INPUT_SIZE = 14208
+
+    constructor()
+
+    constructor(audioConfiguration: AudioConfiguration) {
+        SAMPLE_RATE = audioConfiguration.SAMPLE_RATE
+        CHANNELS = audioConfiguration.CHANNEL_NUM
+        BITRATE = audioConfiguration.BITRATE
+        MAX_INPUT_SIZE = audioConfiguration.MAX_INPUT_SIZE
+    }
+
     init {
         initEncoder()
     }
@@ -115,8 +129,6 @@ class AACEncoder : PCMCapture.PCMDataCallback {
                 val aacDataBuffer = codec?.getOutputBuffer(outputBufferIndex)!!
                 aacDataCallback?.onAACData(aacDataBuffer, bufferInfo)
 
-                val aacData = ByteArray(bufferInfo.size)
-                aacDataBuffer.get(aacData)
                 if (saveToFile) {
                     if (bufferedOutputStream == null) {
                         val f = File(Environment.getExternalStorageDirectory(), "DCIM/Camera/audio.aac")
@@ -127,6 +139,8 @@ class AACEncoder : PCMCapture.PCMDataCallback {
                         bufferedOutputStream = BufferedOutputStream(FileOutputStream(f))
                     }
 
+                    val aacData = ByteArray(bufferInfo.size)
+                    aacDataBuffer.get(aacData)
                     bufferedOutputStream?.write(addADTStoPacket(aacData.size))
                     bufferedOutputStream?.write(aacData)
                 }
@@ -143,11 +157,6 @@ class AACEncoder : PCMCapture.PCMDataCallback {
     }
 
     companion object {
-        private val SAMPLE_RATE = 44100
-        private val CHANNELS = 2
-        private val BITRATE = 192000
-        private val MAX_INPUT_SIZE = 14208
-
         // https://wiki.multimedia.cx/index.php/ADTS
         private fun addADTStoPacket(dataLength: Int): ByteArray {
             val packetLen = dataLength + 7
