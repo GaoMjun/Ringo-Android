@@ -36,6 +36,8 @@ dependencies {
     compile project(':gl')
     compile project(':cameraengine')
     compile project(':extensions')
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha4'
+    compile project(':motionorientation')
 }
 repositories {
     mavenCentral()

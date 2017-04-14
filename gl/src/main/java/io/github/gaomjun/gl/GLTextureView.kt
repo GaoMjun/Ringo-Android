@@ -54,7 +54,7 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
     var recording = false
 
     var orientation: Int? = DEVICE_ORIENTATION_LANDSCAPERIGHT
-    var videoRotation = 0
+    private var videoRotation = 0
 
     init {
         println("init")

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">TestCameraGLPreview</string>
+    <string name="capturebutton">captureButton</string>
 </resources>

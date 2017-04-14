@@ -54,6 +54,10 @@ import com.daimajia.androidanimations.library.flippers.FlipInXAnimator;
 import com.daimajia.androidanimations.library.flippers.FlipInYAnimator;
 import com.daimajia.androidanimations.library.flippers.FlipOutXAnimator;
 import com.daimajia.androidanimations.library.flippers.FlipOutYAnimator;
+import com.daimajia.androidanimations.library.rotating.Rotate180Animator;
+import com.daimajia.androidanimations.library.rotating.Rotate270Animator;
+import com.daimajia.androidanimations.library.rotating.Rotate360Animator;
+import com.daimajia.androidanimations.library.rotating.Rotate90Animator;
 import com.daimajia.androidanimations.library.rotating_entrances.RotateInAnimator;
 import com.daimajia.androidanimations.library.rotating_entrances.RotateInDownLeftAnimator;
 import com.daimajia.androidanimations.library.rotating_entrances.RotateInDownRightAnimator;
@@ -143,6 +147,11 @@ public enum Techniques {
     RotateOutDownRight(RotateOutDownRightAnimator.class),
     RotateOutUpLeft(RotateOutUpLeftAnimator.class),
     RotateOutUpRight(RotateOutUpRightAnimator.class),
+
+    Rotate90(Rotate90Animator.class),
+    Rotate180(Rotate180Animator.class),
+    Rotate270(Rotate270Animator.class),
+    Rotate360(Rotate360Animator.class),
 
     SlideInLeft(SlideInLeftAnimator.class),
     SlideInRight(SlideInRightAnimator.class),

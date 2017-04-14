@@ -35,8 +35,12 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.daimajia.androidanimations.library.BaseViewAnimator;
 import com.daimajia.androidanimations.library.Techniques;
 import com.daimajia.androidanimations.library.YoYo;
+import com.daimajia.androidanimations.library.rotating.RotateAnimator;
+import com.daimajia.androidanimations.library.translation.TranslationXAnimation;
+import com.daimajia.androidanimations.library.translation.TranslationYAnimation;
 
 import org.jetbrains.annotations.NotNull;
 import org.opencv.core.Mat;
@@ -290,6 +294,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     public boolean touchAction(View v, MotionEvent event) {
         if (canTracking == false) return true;
 
+        double x, y, w = 0, h = 0;
+
         final Point point = new Point(event.getX(), event.getY());
         Log.d("OnTouch", point.toString());
         switch (event.getAction()) {
@@ -297,8 +303,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 startPoint.x = point.x;
                 startPoint.y = point.y;
 
-                trackingBoxUtils.setX((int) startPoint.x, 0);
-                trackingBoxUtils.setY((int) startPoint.y, 0);
+
 
 //                    Log.d("MotionEvent", "touch start" + startPoint.toString());
 
@@ -308,13 +313,33 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 trackingBox.setVisibility(View.GONE);
             }
             break;
+
             case MotionEvent.ACTION_MOVE:
                 endPoint.x = point.x;
                 endPoint.y = point.y;
 
+                x = startPoint.x;
+                y = startPoint.y;
+                w = startPoint.x - endPoint.x;
+                h = startPoint.y - endPoint.y;
+
+                if (w < 0) {
+                    w = -w;
+                } else {
+                    x = endPoint.x;
+                }
+
+                if (h < 0) {
+                    h = -h;
+                } else {
+                    y = endPoint.y;
+                }
+
                 trackingBox.setVisibility(View.VISIBLE);
-                trackingBoxUtils.setWidth((int) Math.abs(startPoint.x - endPoint.x), 0);
-                trackingBoxUtils.setHeight((int) Math.abs(startPoint.y - endPoint.y), 0);
+                trackingBoxUtils.setX((int) x, 0);
+                trackingBoxUtils.setY((int) y, 0);
+                trackingBoxUtils.setWidth((int) w, 0);
+                trackingBoxUtils.setHeight((int) h, 0);
 
 //                    Log.d("MotionEvent", "touch move" + endPoint.toString());
                 break;
@@ -322,18 +347,33 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 endPoint.x = point.x;
                 endPoint.y = point.y;
 
-                if (Math.abs(startPoint.x - endPoint.x) > 100 &&
-                        Math.abs(startPoint.y - endPoint.y) > 100) {
+//                double x = startPoint.x;
+//                double y = startPoint.y;
+                w = startPoint.x - endPoint.x;
+                h = startPoint.y - endPoint.y;
+
+                if (w < 0) {
+                    w = -w;
+                } else {
+                    x = endPoint.x;
+                }
+
+                if (h < 0) {
+                    h = -h;
+                } else {
+                    y = endPoint.y;
+                }
+
+                if (w > 100 && h > 100) {
                     canTrackerInit = true;
                     // save box
-                    boxWidth = Math.abs(startPoint.x - endPoint.x);
-                    boxHeight =  Math.abs(startPoint.y - endPoint.y);
+                    boxWidth = w;
+                    boxHeight = h;
                 } else {
                     canTrackerInit = false;
                     startTracking = false;
                     Log.d("OnTouch", "selected box is too small");
                     sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
-
                 }
                 trackingBoxUtils.setRect(0, 0, 0, 0, 0);
                 trackingBox.setVisibility(View.GONE);
@@ -597,18 +637,157 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     }
 
+    private float originX;
+    private float originY;
+    private float originY2;
+
     @Override
     public void deviceOrientationChangedFromTo(int from, int to) {
-        if (to == getDEVICE_ORIENTATION_PORTRAIT() ||
-                to == getDEVICE_ORIENTATION_UPSIDEDOWN() ||
-                to == getDEVICE_ORIENTATION_LANDSCAPERIGHT() ||
-                to == getDEVICE_ORIENTATION_LANDSCAPELEFT()) {
-            cameraView.setOrientation(to);
+
+        float fromDegree = 0;
+        float toDegree = 0;
+
+        switch (from) {
+            case 1:
+                fromDegree = -90;
+                break;
+            case 2:
+                fromDegree = 90;
+                break;
+            case 3:
+                fromDegree = 0;
+                break;
+            case 4:
+                fromDegree = 180;
+                break;
+            default:
+                fromDegree = 0;
+                break;
         }
 
-//        YoYo.with(Techniques.Rotate90)
-//                .duration(100)
-//                .playOn()
+        switch (to) {
+            case 1:
+                cameraView.setOrientation(to);
+                toDegree = -90;
+                if (originX == leftbar.getX()) {
+                    float distance = rightbar.getX();
+                    YoYo.with(new TranslationXAnimation(0, distance)).duration(0).playOn(leftbar);
+                    YoYo.with(new TranslationXAnimation(0, -distance)).duration(0).playOn(rightbar);
+                    leftbar.setBackgroundResource(R.drawable.rightbar_bg_mask);
+                    rightbar.setBackgroundResource(R.drawable.leftbar_bg_mask);
+                }
+
+                if (originY == iv_ble.getY()) {
+                    float distanceY = iv_album.getY() - iv_ble.getY();
+                    YoYo.with(new TranslationYAnimation(0, distanceY)).duration(0).playOn(iv_ble);
+                    YoYo.with(new TranslationYAnimation(0, -distanceY)).duration(0).playOn(iv_album);
+
+                    float distanceY2 = iv_switch_camera.getY() - iv_switch_camera_mode.getY();
+                    YoYo.with(new TranslationYAnimation(0, distanceY2)).duration(0).playOn(iv_switch_camera_mode);
+                    YoYo.with(new TranslationYAnimation(0, -distanceY2)).duration(0).playOn(iv_switch_camera);
+                }
+
+                break;
+            case 2:
+                cameraView.setOrientation(to);
+                toDegree = 90;
+                if (originX != leftbar.getX()) {
+                    float distance = leftbar.getX();
+                    YoYo.with(new TranslationXAnimation(distance, 0)).duration(0).playOn(leftbar);
+                    YoYo.with(new TranslationXAnimation(-distance, 0)).duration(0).playOn(rightbar);
+                    leftbar.setBackgroundResource(R.drawable.leftbar_bg_mask);
+                    rightbar.setBackgroundResource(R.drawable.rightbar_bg_mask);
+                }
+
+                if (originY != iv_ble.getY()) {
+                    float distanceY = iv_ble.getY() - iv_album.getY();
+                    YoYo.with(new TranslationYAnimation(distanceY, 0)).duration(0).playOn(iv_ble);
+                    YoYo.with(new TranslationYAnimation(-distanceY, 0)).duration(0).playOn(iv_album);
+
+                    float distanceY2 = iv_switch_camera_mode.getY() - iv_switch_camera.getY();
+                    YoYo.with(new TranslationYAnimation(distanceY2, 0)).duration(0).playOn(iv_switch_camera_mode);
+                    YoYo.with(new TranslationYAnimation(-distanceY2, 0)).duration(0).playOn(iv_switch_camera);
+                }
+
+                break;
+            case 3:
+                cameraView.setOrientation(to);
+                toDegree = 0;
+                if (originX != leftbar.getX()) {
+                    float distance = leftbar.getX();
+                    YoYo.with(new TranslationXAnimation(distance, 0)).duration(0).playOn(leftbar);
+                    YoYo.with(new TranslationXAnimation(-distance, 0)).duration(0).playOn(rightbar);
+                    leftbar.setBackgroundResource(R.drawable.leftbar_bg_mask);
+                    rightbar.setBackgroundResource(R.drawable.rightbar_bg_mask);
+                }
+
+                if (originY != iv_ble.getY()) {
+                    float distanceY = iv_ble.getY() - iv_album.getY();
+                    YoYo.with(new TranslationYAnimation(distanceY, 0)).duration(0).playOn(iv_ble);
+                    YoYo.with(new TranslationYAnimation(-distanceY, 0)).duration(0).playOn(iv_album);
+
+                    float distanceY2 = iv_switch_camera_mode.getY() - iv_switch_camera.getY();
+                    YoYo.with(new TranslationYAnimation(distanceY2, 0)).duration(0).playOn(iv_switch_camera_mode);
+                    YoYo.with(new TranslationYAnimation(-distanceY2, 0)).duration(0).playOn(iv_switch_camera);
+                }
+
+                break;
+            case 4:
+                cameraView.setOrientation(to);
+                toDegree = 180;
+                if (originX == leftbar.getX()) {
+                    float distance = rightbar.getX();
+                    YoYo.with(new TranslationXAnimation(0, distance)).duration(0).playOn(leftbar);
+                    YoYo.with(new TranslationXAnimation(0, -distance)).duration(0).playOn(rightbar);
+
+                    leftbar.setBackgroundResource(R.drawable.rightbar_bg_mask);
+                    rightbar.setBackgroundResource(R.drawable.leftbar_bg_mask);
+                }
+
+                if (originY == iv_ble.getY()) {
+                    float distanceY = iv_album.getY() - iv_ble.getY();
+                    YoYo.with(new TranslationYAnimation(0, distanceY)).duration(0).playOn(iv_ble);
+                    YoYo.with(new TranslationYAnimation(0, -distanceY)).duration(0).playOn(iv_album);
+
+                    float distanceY2 = iv_switch_camera.getY() - iv_switch_camera_mode.getY();
+                    YoYo.with(new TranslationYAnimation(0, distanceY2)).duration(0).playOn(iv_switch_camera_mode);
+                    YoYo.with(new TranslationYAnimation(0, -distanceY2)).duration(0).playOn(iv_switch_camera);
+                }
+
+                break;
+            default:
+                toDegree = 0;
+                if (originX != leftbar.getX()) {
+                    float distance = leftbar.getX();
+                    YoYo.with(new TranslationXAnimation(distance, 0)).duration(0).playOn(leftbar);
+                    YoYo.with(new TranslationXAnimation(-distance, 0)).duration(0).playOn(rightbar);
+                    leftbar.setBackgroundResource(R.drawable.leftbar_bg_mask);
+                    rightbar.setBackgroundResource(R.drawable.rightbar_bg_mask);
+                }
+
+                if (originY != iv_ble.getY()) {
+                    float distanceY = iv_ble.getY() - iv_album.getY();
+                    YoYo.with(new TranslationYAnimation(distanceY, 0)).duration(0).playOn(iv_ble);
+                    YoYo.with(new TranslationYAnimation(-distanceY, 0)).duration(0).playOn(iv_album);
+
+                    float distanceY2 = iv_switch_camera_mode.getY() - iv_switch_camera.getY();
+                    YoYo.with(new TranslationYAnimation(distanceY2, 0)).duration(0).playOn(iv_switch_camera_mode);
+                    YoYo.with(new TranslationYAnimation(-distanceY2, 0)).duration(0).playOn(iv_switch_camera);
+                }
+
+                break;
+        }
+
+        View[] views = {iv_switch_camera_mode, iv_switch_camera, iv_ble, iv_album, bluetooth_devices_list_view};
+        playAnimationOnMultiView(views, new RotateAnimator(fromDegree, toDegree), 100);
+    }
+
+    private void playAnimationOnMultiView(final View[] views, BaseViewAnimator animator, long duration) {
+        for (View v : views) {
+            YoYo.with(animator)
+                    .duration(duration)
+                    .playOn(v);
+        }
     }
 
     private class RecvDataListener implements BLEDriven.RecvCallback {
@@ -870,6 +1049,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     }
 
     private MotionOrientation motionOrientation;
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -927,6 +1107,10 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         if (motionOrientation != null) {
             motionOrientation.setDeviceOrientationListener(this);
         }
+
+        originX = leftbar.getX();
+        originY = iv_ble.getY();
+        originY2 = iv_switch_camera_mode.getY();
     }
 
     @Override
@@ -1038,12 +1222,29 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 //                }
 //            }).start();
 
+
             if (canTrackerInit) {
+                double x = startPoint.x;
+                double y = startPoint.y;
+                double w = startPoint.x - endPoint.x;
+                double h = startPoint.y - endPoint.y;
+
+                if (w < 0) {
+                    w = -w;
+                } else {
+                    x = endPoint.x;
+                }
+
+                if (h < 0) {
+                    h = -h;
+                } else {
+                    y = endPoint.y;
+                }
                 cmtTracker.OpenCMT(mat.getNativeObjAddr(),
-                        (int) (startPoint.x / SCALE),
-                        (int) (startPoint.y / SCALE),
-                        (int) (endPoint.x / SCALE),
-                        (int) (endPoint.y / SCALE),
+                        (int) (x / SCALE),
+                        (int) (y / SCALE),
+                        (int) ((x + w) / SCALE),
+                        (int) ((y + h) / SCALE),
                         cameraEngine.isFrontCamera());
                 canTrackerInit = false;
                 startTracking = true;
@@ -1097,6 +1298,22 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         yoffset *= 10;
 
 //                        Log.d("tracking...", "[" + xoffset + "," + yoffset + "]");
+
+                        int deviceOrientation = MotionOrientation.getDEVICE_ORIENTATION();
+                        if (deviceOrientation == MotionOrientation.getDEVICE_ORIENTATION_PORTRAIT()) {
+                            int xoffset_t = xoffset;
+                            xoffset = -yoffset;
+                            yoffset = xoffset_t;
+                        } else if (deviceOrientation == MotionOrientation.getDEVICE_ORIENTATION_UPSIDEDOWN()) {
+                            int xoffset_t = xoffset;
+                            xoffset = yoffset;
+                            yoffset = -xoffset_t;
+                        } else if (deviceOrientation == MotionOrientation.getDEVICE_ORIENTATION_LANDSCAPERIGHT()) {
+
+                        } else if (deviceOrientation == MotionOrientation.getDEVICE_ORIENTATION_LANDSCAPELEFT()) {
+                            xoffset = -xoffset;
+                            yoffset = -yoffset;
+                        }
 
                         sendMessage.setXoffset(TypeConversion.intToBytes(xoffset));
                         sendMessage.setYoffset(TypeConversion.intToBytes(yoffset));

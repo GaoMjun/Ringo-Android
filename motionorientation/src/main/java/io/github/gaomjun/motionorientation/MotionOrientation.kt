@@ -23,21 +23,22 @@ object MotionOrientation : SensorEventListener {
     private var R =  FloatArray(9)
     private var orientation = FloatArray(3)
 
-    val DEVICE_ORIENTATION_UNKNOWN = 0
-    val DEVICE_ORIENTATION_PORTRAIT = 1
-    val DEVICE_ORIENTATION_UPSIDEDOWN = 2
-    val DEVICE_ORIENTATION_LANDSCAPERIGHT = 3
-    val DEVICE_ORIENTATION_LANDSCAPELEFT = 4
-    val DEVICE_ORIENTATION_FACEUP = 5
-    val DEVICE_ORIENTATION_FACEDOWN = 6
-    var DEVICE_ORIENTATION = DEVICE_ORIENTATION_UNKNOWN
+    @JvmStatic val DEVICE_ORIENTATION_UNKNOWN = 0
+    @JvmStatic val DEVICE_ORIENTATION_PORTRAIT = 1
+    @JvmStatic val DEVICE_ORIENTATION_UPSIDEDOWN = 2
+    @JvmStatic val DEVICE_ORIENTATION_LANDSCAPERIGHT = 3
+    @JvmStatic val DEVICE_ORIENTATION_LANDSCAPELEFT = 4
+    @JvmStatic val DEVICE_ORIENTATION_FACEUP = 5
+    @JvmStatic val DEVICE_ORIENTATION_FACEDOWN = 6
+
+    @JvmStatic var DEVICE_ORIENTATION = DEVICE_ORIENTATION_UNKNOWN
 
     private var lastDeviceOrientation = DEVICE_ORIENTATION_UNKNOWN
     
     private val THRESHOLD = 10
     private val THRESHOLDHARD = 30
 
-    fun init(context: Context?): MotionOrientation? {
+    @JvmStatic fun init(context: Context?): MotionOrientation? {
         sensorManager = context?.getSystemService(SENSOR_SERVICE) as SensorManager?
         accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         magnetometer = sensorManager?.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
