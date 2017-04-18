@@ -197,12 +197,12 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 //                    YoYo.with(Techniques.FlipInY)
 //                            .duration(200)
 //                            .playOn(cameraView);
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        cameraEngine.switchCamera();
-                    }
-                }).start();
+
+                cameraEngine.switchCamera();
+                canTrackerInit = false;
+                startTracking = false;
+                sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
+
                 break;
             case R.id.bluetooth_devices_list_close:
                 bluetooth_devices_list_view.setVisibility(View.GONE);
@@ -372,8 +372,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 } else {
                     canTrackerInit = false;
                     startTracking = false;
-                    Log.d("OnTouch", "selected box is too small");
                     sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
+                    Log.d("OnTouch", "selected box is too small");
                 }
                 trackingBoxUtils.setRect(0, 0, 0, 0, 0);
                 trackingBox.setVisibility(View.GONE);
