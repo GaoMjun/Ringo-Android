@@ -72,6 +72,7 @@ public class BLEDriven {
                 case BluetoothProfile.STATE_DISCONNECTED:
                     connectingStatusCallback.onConnecting(DISCONNECTED);
                     connectedToDevice = false;
+                    bluetoothDevice = null;
                     break;
             }
         }

@@ -963,9 +963,11 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     break;
                 case BLEDriven.DISCONNECTED:
                     iv_tracking_status.setEnabled(false);
-//                    bluetoothDevice = null;
-//                    datasourceChanged(bluetoothDeviceList, bluetoothDevice);
+                    bluetoothDeviceList.clear();
+                    bluetoothDevice = null;
+                    datasourceChanged(bluetoothDeviceList, bluetoothDevice);
                     Log.d("onConnecting", "DISCONNECTED");
+
                     break;
             }
         }
