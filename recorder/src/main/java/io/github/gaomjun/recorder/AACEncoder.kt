@@ -22,12 +22,12 @@ class AACEncoder : PCMCapture.PCMDataCallback {
     private var aacEncodingThread: HandlerThread? = null
     private var aacEncodingHandler: Handler? = null
 
-    private val pcmCapture = PCMCapture()
+    private var pcmCapture: PCMCapture? = null
 
     var audioFormatChanged: ((format: MediaFormat) -> Unit)? = null
     var audioFormat: MediaFormat? = null
 
-    private var saveToFile = false
+    var saveAACToFile = false
     private var bufferedOutputStream: BufferedOutputStream? = null
 
     private var SAMPLE_RATE = 44100
@@ -35,9 +35,13 @@ class AACEncoder : PCMCapture.PCMDataCallback {
     private var BITRATE = 192000
     private var MAX_INPUT_SIZE = 14208
 
-    constructor()
+    constructor() {
+        pcmCapture = PCMCapture()
+    }
 
     constructor(audioConfiguration: AudioConfiguration) {
+        pcmCapture = PCMCapture(audioConfiguration)
+
         SAMPLE_RATE = audioConfiguration.SAMPLE_RATE
         CHANNELS = audioConfiguration.CHANNEL_NUM
         BITRATE = audioConfiguration.BITRATE
@@ -75,13 +79,14 @@ class AACEncoder : PCMCapture.PCMDataCallback {
         aacEncodingThread?.start()
         aacEncodingHandler = Handler(aacEncodingThread?.looper)
 
-        pcmCapture.pcmDataCallback = this
-        pcmCapture.start()
+        pcmCapture?.savePCMToFile = saveAACToFile
+        pcmCapture?.pcmDataCallback = this
+        pcmCapture?.start()
     }
 
     fun stop() {
-        pcmCapture.pcmDataCallback = null
-        pcmCapture.stop()
+        pcmCapture?.pcmDataCallback = null
+        pcmCapture?.stop()
 
         if (aacEncodingThread != null) {
             val moribund = aacEncodingThread
@@ -90,11 +95,12 @@ class AACEncoder : PCMCapture.PCMDataCallback {
         }
     }
 
-    interface AACDataCallback {
-        fun onAACData(byteBuffer: ByteBuffer, info: MediaCodec.BufferInfo)
+    interface AudioDataListener {
+        fun onPCMData(data: ByteArray, size: Int, timestamp: Long) {}
+        fun onAACData(byteBuffer: ByteBuffer, info: MediaCodec.BufferInfo) {}
     }
 
-    var aacDataCallback: AACDataCallback? = null
+    var audioDataListener: AudioDataListener? = null
 
     private var ptsStart: Long = -1
     private inner class AACEncodingRunnable(val data: ByteArray, val size: Int, val timestamp: Long) : Runnable {
@@ -117,19 +123,11 @@ class AACEncoder : PCMCapture.PCMDataCallback {
                 audioFormatChanged?.invoke(audioFormat!!)
             }
             if (outputBufferIndex!! >= 0) {
-//                println("AACEncodingRunnable " + bufferInfo.size)
-
-//                println("audio timestap ${bufferInfo.presentationTimeUs}")
-//                if (ptsStart < 0) {
-//                    // start pts
-//                    ptsStart = timestamp
-//                }
-//                val pts = timestamp - ptsStart
                 bufferInfo.presentationTimeUs = timestamp
                 val aacDataBuffer = codec?.getOutputBuffer(outputBufferIndex)!!
-                aacDataCallback?.onAACData(aacDataBuffer, bufferInfo)
+                audioDataListener?.onAACData(aacDataBuffer, bufferInfo)
 
-                if (saveToFile) {
+                if (saveAACToFile) {
                     if (bufferedOutputStream == null) {
                         val f = File(Environment.getExternalStorageDirectory(), "DCIM/Camera/audio.aac")
                         if (f.exists()) {
@@ -154,6 +152,7 @@ class AACEncoder : PCMCapture.PCMDataCallback {
 //        println("onPCMData $size")
 
         aacEncodingHandler?.post(AACEncodingRunnable(data, size, timestamp))
+        audioDataListener?.onPCMData(data, size, timestamp)
     }
 
     companion object {

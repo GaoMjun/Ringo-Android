@@ -15,7 +15,7 @@ import java.nio.ByteBuffer
 /**
  * Created by qq on 7/3/2017.
  */
-class Recorder : AACEncoder.AACDataCallback {
+class Recorder : AACEncoder.AudioDataListener {
 
     private var recorderThead: HandlerThread? = null
     private var recorderThreadHandler: RecorderThreadHandler? = null
@@ -87,15 +87,15 @@ class Recorder : AACEncoder.AACDataCallback {
                 }
 
                 info.presentationTimeUs = (info.presentationTimeUs - audioTimestampStart) / 1000
-                info.presentationTimeUs += 5000
-                println("muxing audio ${info.presentationTimeUs}")
+                info.presentationTimeUs += 6000
+//                println("muxing audio ${info.presentationTimeUs}")
             }
             MEDIA_TYPE_VIDEO -> {
                 if (videoTimestampStart < 0) {
                     videoTimestampStart = info.presentationTimeUs
                 }
                 info.presentationTimeUs = info.presentationTimeUs - videoTimestampStart
-                println("muxing video ${info.presentationTimeUs}")
+//                println("muxing video ${info.presentationTimeUs}")
             }
         }
 
@@ -177,7 +177,7 @@ class Recorder : AACEncoder.AACDataCallback {
         mediaMuxer?.start()
         recording = true
 
-        aacEncoder.aacDataCallback = this
+        aacEncoder.audioDataListener = this
     }
 
     override fun onAACData(byteBuffer: ByteBuffer, info: MediaCodec.BufferInfo) {

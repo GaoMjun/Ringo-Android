@@ -23,7 +23,7 @@ class PCMCapture {
 
     private @Volatile var exit = false
 
-    private var saveToFile = false
+    var savePCMToFile = false
     private var bufferedOutputStream: BufferedOutputStream? = null
 
     private var SAMPLE_RATE = 44100
@@ -89,12 +89,12 @@ class PCMCapture {
                     val len = audioRecord?.read(pcmData, offset, readlen)
                     offset += len!!
 
-                    if (len!! > 0) {
+                    if (len > 0) {
 //                        println("audioRecord $len")
 
                         pcmDataCallback?.onPCMData(pcmData!!, len, System.nanoTime())
 
-                        if (saveToFile) {
+                        if (savePCMToFile) {
                             if (bufferedOutputStream == null) {
                                 val f = File(Environment.getExternalStorageDirectory(), "DCIM/Camera/audio.wav")
                                 if (f.exists()) {
