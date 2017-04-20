@@ -5,6 +5,7 @@
 #include <jni.h>
 #include "CMT.h"
 #include <android/log.h>
+#include <opencv2/imgproc.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,41 +21,40 @@ static cmt::CMT *cmtTracker;
 JNIEXPORT void JNICALL
 Java_io_github_gaomjun_cmttracker_CMTTracker_OpenCMT(JNIEnv *env, jclass thiz,
                                                      jlong matAddrGr,
-                                                     jint x1, jint y1, jint x2, jint y2,
-                                                     jboolean isFrontCamera) {
+                                                     jint x, jint y, jint w, jint h) {
 
-    const Mat *im_gray = (cv::Mat *)matAddrGr;
-    if (isFrontCamera)
-        flip(*im_gray, *im_gray, 1);
+    const Mat &im_gray = *(cv::Mat *)matAddrGr;
 
-    cv::Point p1(x1, y1);
-    cv::Point p2(x2, y2);
-    cv::Rect initCTBox(p1, p2);
+    cv::Rect initCTBox(x, y, w, h);
 
     CMTinitiated = false;
     if (cmtTracker != nullptr) {
         delete cmtTracker;
     }
     cmtTracker = new cmt::CMT();
-    cmtTracker->initialize(*im_gray, initCTBox);
+    cmtTracker->initialize(im_gray, initCTBox);
     initTrackedPoints = cmtTracker->points_active.size();
-//        LOGD("initTrackingPoints %d", initTrackedPoints);
+    LOGD("initTrackingPoints %d", initTrackedPoints);
     CMTinitiated = true;
 }
 
 JNIEXPORT void JNICALL
 Java_io_github_gaomjun_cmttracker_CMTTracker_ProcessCMT(JNIEnv *env, jclass thiz,
-                                                        jlong matAddrGr,
-                                                        jboolean isFrontCamera) {
+                                                        jlong matAddrGr) {
 
     if (!CMTinitiated)
         return;
 
     cv::Mat &im_gray  = *(cv::Mat*)matAddrGr;
-    if (isFrontCamera)
-        flip(im_gray, im_gray, 1);
 
     cmtTracker->processFrame(im_gray);
+
+
+//    int w = (int) cmtTracker->bb_rot.size.width;
+//    int h = (int) cmtTracker->bb_rot.size.height;
+//    int x = (int) (cmtTracker->bb_rot.center.x - w / 2);
+//    int y = (int) (cmtTracker->bb_rot.center.y - h / 2);
+//    cv::rectangle(im_gray, cv::Rect(x, y, w, h), cv::Scalar(255, 0, 0));
 }
 
 JNIEXPORT jintArray JNICALL
@@ -68,22 +68,19 @@ Java_io_github_gaomjun_cmttracker_CMTTracker_CMTgetRect(JNIEnv *env, jclass thiz
 
     jint fill[4];
 
-    {
-        float centerX = cmtTracker->bb_rot.center.x;
-        float centerY = cmtTracker->bb_rot.center.y;
-        float w = cmtTracker->bb_rot.size.width;
-        float h = cmtTracker->bb_rot.size.height;
+    float centerX = cmtTracker->bb_rot.center.x;
+    float centerY = cmtTracker->bb_rot.center.y;
+    float w = cmtTracker->bb_rot.size.width;
+    float h = cmtTracker->bb_rot.size.height;
 
-        fill[0] = (jint) (centerX - w / 2);
-        fill[1] = (jint) (centerY - h / 2);
-        fill[2] = (jint) w;
-        fill[3] = (jint) h;
+    fill[0] = (jint) (centerX - w / 2);
+    fill[1] = (jint) (centerY - h / 2);
+    fill[2] = (jint) w;
+    fill[3] = (jint) h;
 
-        env->SetIntArrayRegion(result, 0, 4, fill);
-        return result;
-    }
+    env->SetIntArrayRegion(result, 0, 4, fill);
 
-    return NULL;
+    return result;
 }
 
 JNIEXPORT jboolean JNICALL

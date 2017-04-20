@@ -9,9 +9,9 @@ public class CMTTracker {
     public CMTTracker() {
     }
 
-    public native void OpenCMT(long matAddrGr, int x1, int y1, int x2, int y2, boolean isFrontCamera);
+    public native void OpenCMT(long matAddrGr, int x, int y, int w, int h);
 
-    public native void ProcessCMT(long matAddrGr, boolean isFrontCamera);
+    public native void ProcessCMT(long matAddrGr);
 
     public static native int[] CMTgetRect();
 
