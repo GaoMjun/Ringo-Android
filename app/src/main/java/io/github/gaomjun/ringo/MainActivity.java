@@ -308,8 +308,6 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 startPoint.x = point.x;
                 startPoint.y = point.y;
 
-
-
 //                    Log.d("MotionEvent", "touch start" + startPoint.toString());
 
             {
@@ -946,15 +944,17 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             if (Arrays.equals(gimbalMode, GimbalMobileBLEProtocol.GIMBALMODE_FACEFOLLOW)) {
                 // can tracking
                 canTracking = true;
+                cvCamera.startTracking = true;
             } else {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (iv_tracking_status.isSelected()) {
+                cvCamera.startTracking = false;
+                if (iv_tracking_status.isSelected()) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
                             iv_tracking_status.performClick();
                         }
-                    }
-                });
+                    });
+                }
             }
         }
     }
@@ -1354,15 +1354,15 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 }
             }
 
-//            final Bitmap img = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
-//            Utils.matToBitmap(mat, img);
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    testImageView.setVisibility(View.VISIBLE);
-//                    testImageView.setImageBitmap(img);
-//                }
-//            });
+/*            final Bitmap img = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(mat, img);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    testImageView.setVisibility(View.VISIBLE);
+                    testImageView.setImageBitmap(img);
+                }
+            });*/
         }
     }
 

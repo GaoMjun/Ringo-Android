@@ -19,7 +19,7 @@ static size_t initTrackedPoints = 0;
 static cmt::CMT *cmtTracker;
 
 JNIEXPORT void JNICALL
-Java_io_github_gaomjun_cmttracker_CMTTracker_OpenCMT(JNIEnv *env, jclass thiz,
+Java_io_github_gaomjun_cmttracker_CMTTracker_OpenCMT(JNIEnv *, jclass,
                                                      jlong matAddrGr,
                                                      jint x, jint y, jint w, jint h) {
 
@@ -39,7 +39,7 @@ Java_io_github_gaomjun_cmttracker_CMTTracker_OpenCMT(JNIEnv *env, jclass thiz,
 }
 
 JNIEXPORT void JNICALL
-Java_io_github_gaomjun_cmttracker_CMTTracker_ProcessCMT(JNIEnv *env, jclass thiz,
+Java_io_github_gaomjun_cmttracker_CMTTracker_ProcessCMT(JNIEnv *, jclass,
                                                         jlong matAddrGr) {
 
     if (!CMTinitiated)
@@ -50,15 +50,15 @@ Java_io_github_gaomjun_cmttracker_CMTTracker_ProcessCMT(JNIEnv *env, jclass thiz
     cmtTracker->processFrame(im_gray);
 
 
-//    int w = (int) cmtTracker->bb_rot.size.width;
-//    int h = (int) cmtTracker->bb_rot.size.height;
-//    int x = (int) (cmtTracker->bb_rot.center.x - w / 2);
-//    int y = (int) (cmtTracker->bb_rot.center.y - h / 2);
-//    cv::rectangle(im_gray, cv::Rect(x, y, w, h), cv::Scalar(255, 0, 0));
+/*    int w = (int) cmtTracker->bb_rot.size.width;
+    int h = (int) cmtTracker->bb_rot.size.height;
+    int x = (int) (cmtTracker->bb_rot.center.x - w / 2);
+    int y = (int) (cmtTracker->bb_rot.center.y - h / 2);
+    cv::rectangle(im_gray, cv::Rect(x, y, w, h), cv::Scalar(255, 0, 0));*/
 }
 
 JNIEXPORT jintArray JNICALL
-Java_io_github_gaomjun_cmttracker_CMTTracker_CMTgetRect(JNIEnv *env, jclass thiz) {
+Java_io_github_gaomjun_cmttracker_CMTTracker_CMTgetRect(JNIEnv *env, jclass) {
 
     if (!CMTinitiated)
         return NULL;
@@ -84,7 +84,7 @@ Java_io_github_gaomjun_cmttracker_CMTTracker_CMTgetRect(JNIEnv *env, jclass thiz
 }
 
 JNIEXPORT jboolean JNICALL
-Java_io_github_gaomjun_cmttracker_CMTTracker_CMTgetResult(JNIEnv *env, jclass type) {
+Java_io_github_gaomjun_cmttracker_CMTTracker_CMTgetResult(JNIEnv *, jclass) {
 
 //    LOGD("initTrackingPoints %d %d", initTrackedPoints, cmt->trackedKeypoints.size());
     return (jboolean) (cmtTracker->points_active.size() > (initTrackedPoints / 4));
