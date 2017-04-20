@@ -6,6 +6,8 @@ import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.AudioManager;
@@ -24,9 +26,9 @@ import java.util.List;
  */
 
 public class CameraEngine {
-//    private byte[] cameraCallbackBuffer1;
-//    private byte[] cameraCallbackBuffer2;
-    private static final int RECORD_FINISH = 0;
+    private byte[] frontBuffer;
+    private byte[] backBuffer;
+
     public Context context;
     private volatile static CameraEngine instance = null;
     public static int CAMERA_BACK = 0;
@@ -35,6 +37,9 @@ public class CameraEngine {
     private static SurfaceTexture surfaceTexture;
     public static int previewWidth;
     public static int previewHeight;
+
+    private boolean supportMetering = false;
+
     private static Camera.PreviewCallback previewCallback;
     private Camera.ShutterCallback shutterCallback = new Camera.ShutterCallback() {
         @Override
@@ -175,16 +180,13 @@ public class CameraEngine {
                 setPictureSize();
                 setPreviewFpsRange();
                 camera.setPreviewTexture(surfaceTexture);
-//                cameraCallbackBuffer1 = new byte[getYUVBufferSize(previewWidth, previewHeight)];
-//                cameraCallbackBuffer2 = new byte[getYUVBufferSize(previewWidth, previewHeight)];
-//                camera.addCallbackBuffer(cameraCallbackBuffer1);
-//                camera.addCallbackBuffer(cameraCallbackBuffer2);
-//                camera.setPreviewCallbackWithBuffer(previewCallback);
-                camera.setPreviewCallback(previewCallback);
-//                if (isFrontCamera()) {
-//                    camera.setDisplayOrientation(180);
-//                    setRotation(180);
-//                }
+                if (frontBuffer == null) frontBuffer = new byte[getYUVBufferSize(previewWidth, previewHeight)];
+                if (backBuffer == null) backBuffer = new byte[getYUVBufferSize(previewWidth, previewHeight)];
+                camera.addCallbackBuffer(frontBuffer);
+                camera.addCallbackBuffer(backBuffer);
+                camera.setPreviewCallbackWithBuffer(previewCallback);
+//                camera.setPreviewCallback(previewCallback);
+
                 CameraEngine.surfaceTexture = surfaceTexture;
                 camera.startPreview();
             } catch (IOException e) {
@@ -264,6 +266,15 @@ public class CameraEngine {
 
                 System.out.println("setPictureFormat JPEG");
             }
+        }
+
+        int maxNumMeteringAreas = parameters.getMaxNumMeteringAreas();
+        if (maxNumMeteringAreas > 0) {
+            supportMetering = true;
+            System.out.println("camera support " + maxNumMeteringAreas + " Metering Areas");
+        } else {
+            supportMetering = false;
+            System.out.println("camera not support Metering");
         }
 
         camera.setParameters(parameters);
@@ -401,6 +412,32 @@ public class CameraEngine {
         Camera.Parameters parameters = camera.getParameters();
         parameters.setRotation(rotation);
         camera.setParameters(parameters);
+    }
+
+    public void setMeteringAreas(int x, int y, int w, int h) {
+        if (supportMetering) {
+            Camera.Parameters parameters = camera.getParameters();
+
+            List<Camera.Area> meteringAreas = new ArrayList<>();
+            meteringAreas.add(new Camera.Area(calculateMeteringRect(x, y, w, h), 1000));
+
+            parameters.setMeteringAreas(meteringAreas);
+        }
+    }
+
+    private static Rect calculateMeteringRect(int x, int y, int w, int h) {
+
+        int centerX = x / previewWidth - 1000;
+        int centerY = y / previewHeight - 1000;
+
+        int left = clamp(centerX - previewWidth / 2, -1000, 1000);
+        int top = clamp(centerY - previewHeight / 2, -1000, 1000);
+
+        return new Rect(left, top, left + w, top + h);
+    }
+
+    public static int clamp(int val, int min, int max) {
+        return Math.max(min, Math.min(max, val));
     }
 
 //    private class CameraPreviewCallback implements Camera.PreviewCallback {

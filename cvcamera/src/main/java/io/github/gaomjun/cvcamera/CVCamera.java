@@ -8,6 +8,7 @@ import android.util.Log;
 import org.opencv.android.InstallCallbackInterface;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
@@ -30,8 +31,12 @@ public class CVCamera {
 
     public CameraEngine cameraEngine = CameraEngine.getInstance();
     public boolean startLive = false;
+    public boolean startTracking = false;
     public FrameCallback delegate;
 //    private byte[] cameraCallbackBuffer;
+
+    private Mat matBuffer;
+    private Mat gray;
 
     private Camera.PreviewCallback cameraPreviewCallback  = new Camera.PreviewCallback() {
         @Override
@@ -47,22 +52,37 @@ public class CVCamera {
                 }
             }
 
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    synchronized (this) {
-                        Mat mat = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
-                        mat.put(0, 0, data);
-                        if (!mat.empty()) {
-                            final Mat smallMat = mat.clone();
-                            Imgproc.resize(smallMat, smallMat, new org.opencv.core.Size(128, 72));
-                            delegate.processingFrame(smallMat);
+            if (startTracking) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronized (this) {
+                            Mat mat = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
+                            mat.put(0, 0, data);
+                            if (!mat.empty()) {
+                                final Mat smallMat = mat.clone();
+                                Imgproc.resize(smallMat, smallMat, new org.opencv.core.Size(128, 72), 0, 0, Imgproc.INTER_NEAREST);
+                                if (cameraEngine.isFrontCamera()) Core.flip(smallMat, smallMat, 1);
+                                Imgproc.equalizeHist(smallMat, smallMat);
+                                delegate.processingFrame(smallMat);
+                            }
                         }
                     }
-                }
-            }).start();
+                }).start();
+            }
 
-//            camera.addCallbackBuffer(data);
+
+//            if (matBuffer == null) matBuffer = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
+//            matBuffer.put(0, 0, data);
+//            if (!matBuffer.empty()) {
+//                if (gray == null) gray = new Mat(72, 128, CvType.CV_8UC1);
+//                Imgproc.resize(matBuffer, gray, gray.size(), 0, 0, Imgproc.INTER_NEAREST);
+//                if (cameraEngine.isFrontCamera()) Core.flip(gray, gray, 1);
+//                Imgproc.equalizeHist(gray, gray);
+//                delegate.processingFrame(gray);
+//            }
+
+            camera.addCallbackBuffer(data);
         }
     };
 
@@ -98,12 +118,4 @@ public class CVCamera {
     public interface FrameCallback {
         void processingFrame(Mat mat);
     }
-
-//    private class PreViewCallback implements CameraEngine.PreviewCallback {
-//
-//        @Override
-//        public void previewCallback(byte[] buffer, int width, int height) {
-//            System.out.println("previewCallback");
-//        }
-//    }
 }
