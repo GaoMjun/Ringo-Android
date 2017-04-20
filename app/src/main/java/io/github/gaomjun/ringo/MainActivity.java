@@ -43,8 +43,11 @@ import com.daimajia.androidanimations.library.translation.TranslationXAnimation;
 import com.daimajia.androidanimations.library.translation.TranslationYAnimation;
 
 import org.jetbrains.annotations.NotNull;
+import org.opencv.android.Utils;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
+import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -53,8 +56,10 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -294,10 +299,10 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     public boolean touchAction(View v, MotionEvent event) {
         if (canTracking == false) return true;
 
-        double x, y, w = 0, h = 0;
+        double x, y, w, h;
 
         final Point point = new Point(event.getX(), event.getY());
-        Log.d("OnTouch", point.toString());
+//        Log.d("OnTouch", point.toString());
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 startPoint.x = point.x;
@@ -388,6 +393,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     private boolean canCapture = true;
     private boolean canRecord = true;
+    private boolean canSwitch = true;
     private boolean allPermissionGranted = false;
 
     private void takePicture() {
@@ -471,7 +477,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(getApplicationContext(), "剩余空间不足", Toast.LENGTH_SHORT);
+                    Toast.makeText(getApplicationContext(), "剩余空间不足", Toast.LENGTH_SHORT).show();
                 }
             });
             return false;
@@ -503,7 +509,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         String ringoDirectory = ringoDirectory();
         if (ringoDirectory == null) return false;
 
-        String currentTimeString = new SimpleDateFormat("yyyyMMddHHmmSS").format(new Date());
+        String currentTimeString = new SimpleDateFormat("yyyyMMddHHmmSS", Locale.US).format(new Date());
         String moviePath = ringoDirectory + "/" + currentTimeString + ".mp4";
         cameraView.startRecord(moviePath);
 
@@ -524,7 +530,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             Log.d("cellOnClick", "" + position);
 
             if (bluetoothDevice != null) {
-                if (bluetoothDevice.getAddress().equals(bluetoothDeviceList.get(position))) {
+                if (bluetoothDevice.getAddress().equals(bluetoothDeviceList.get(position).getAddress())) {
                     return;
                 } else {
                     bleDriven.disconnectDevice();
@@ -564,8 +570,6 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -644,8 +648,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     @Override
     public void deviceOrientationChangedFromTo(int from, int to) {
 
-        float fromDegree = 0;
-        float toDegree = 0;
+        float fromDegree;
+        float toDegree;
 
         switch (from) {
             case 1:
@@ -807,30 +811,37 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     Log.d("onRecvData", "capture action");
                     {
                         if (!cameraView.getRecording()) {
+
                             Integer tag = (Integer) iv_switch_camera_mode.getTag();
                             if ((tag != null) && (tag != R.drawable.camera_mode_photo)) {
-                                iv_switch_camera_mode.post(new Runnable() {
+                                runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
                                         iv_switch_camera_mode.performClick();
+                                        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                iv_capture.performClick();
+                                            }
+                                        }, 10);
+
+                                    }
+                                });
+                            } else {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        iv_capture.performClick();
                                     }
                                 });
                             }
 
-                            iv_capture.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    iv_capture.performClick();
-                                }
-                            });
                         } else {
                             // while muxing, can not capture
-                            MainActivity.this.runOnUiThread(new Runnable() {
+                            runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    Toast.makeText(MainActivity.this,
-                                            "while muxing, can not capture",
-                                            Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(MainActivity.this,  "while muxing, can not capture", Toast.LENGTH_SHORT).show();
                                 }
                             });
                         }
@@ -853,20 +864,26 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     {
                         Integer tag = (Integer) iv_switch_camera_mode.getTag();
                         if ((tag == null) || (tag != R.drawable.camera_mode_video)) {
-                            iv_switch_camera_mode.post(new Runnable() {
+                            runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     iv_switch_camera_mode.performClick();
+                                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            iv_capture.performClick();
+                                        }
+                                    }, 10);
+                                }
+                            });
+                        } else {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    iv_capture.performClick();
                                 }
                             });
                         }
-
-                        iv_capture.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                iv_capture.performClick();
-                            }
-                        });
                     }
                     sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_RECORD_OK);
                     new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
@@ -878,14 +895,24 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 }
 
             } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_SWITCH)) {
-                Log.d("onRecvData", "swich camera action");
-                iv_switch_camera.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        iv_switch_camera.performClick();
-                    }
-                });
-                sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_SWITCH_OK);
+                if (canSwitch) {
+                    canSwitch = false;
+
+                    Log.d("onRecvData", "swich camera action");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            iv_switch_camera.performClick();
+                        }
+                    });
+                    sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMANDBACK_SWITCH_OK);
+                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            canSwitch = true;
+                        }
+                    }, 500);
+                }
 
             } else if (Arrays.equals(command, GimbalMobileBLEProtocol.REMOTECOMMAND_CLEAR)){
                 sendMessage.setCommandBack(GimbalMobileBLEProtocol.COMMADNBACK_CLEAR);
@@ -920,7 +947,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 // can tracking
                 canTracking = true;
             } else {
-                MainActivity.this.runOnUiThread(new Runnable() {
+                runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         if (iv_tracking_status.isSelected()) {
@@ -939,7 +966,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             switch (status) {
                 case BLEDriven.CONNECTED:
                     Log.d("onConnecting", "CONNECTED");
-                    MainActivity.this.runOnUiThread(new Runnable() {
+                    runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             progressBar_connecting_ble_device.setVisibility(View.GONE);
@@ -947,7 +974,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         }
                     });
 
-                    bluetooth_devices_list_view.postDelayed(new Runnable() {
+                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             if (bluetooth_devices_list_view.getVisibility() != View.GONE) {
@@ -965,7 +992,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     iv_tracking_status.setEnabled(false);
                     bluetoothDeviceList.clear();
                     bluetoothDevice = null;
-                    datasourceChanged(bluetoothDeviceList, bluetoothDevice);
+                    datasourceChanged(bluetoothDeviceList, null);
                     Log.d("onConnecting", "DISCONNECTED");
 
                     break;
@@ -1167,8 +1194,10 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private void initView() {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        SCREEN_WIDTH = getWindowManager().getDefaultDisplay().getWidth();
-        SCREEN_HEIGHT = getWindowManager().getDefaultDisplay().getHeight();
+        android.graphics.Point screenSize = new android.graphics.Point();
+        getWindowManager().getDefaultDisplay().getSize(screenSize);
+        SCREEN_WIDTH = screenSize.x;
+        SCREEN_HEIGHT = screenSize.y;
         SCALE = SCREEN_WIDTH / 128;
 
         iv_tracking_status.setEnabled(false);
@@ -1189,7 +1218,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     }
 
     @Override
-    public void processingFrame(final Mat mat) {
+    public void processingFrame(Mat mat) {
 //        Log.d("processingFrame", mat.size().toString());
         if (trackingThreadHandler != null) {
             trackingThreadHandler.post(new TrackingRunnable(mat));
@@ -1201,59 +1230,40 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private class TrackingRunnable implements Runnable {
         private Mat mat = null;
 
-        public TrackingRunnable(Mat mat) {
+        TrackingRunnable(Mat mat) {
             this.mat = mat;
         }
 
         @Override
         public void run() {
-
-//            new Thread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    synchronized (this) {
-//                        final Bitmap img = Bitmap.createBitmap(mat.cols(), mat.rows(),Bitmap.Config.ARGB_8888);
-//                        Utils.matToBitmap(mat, img);
-//                        runOnUiThread(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                testImageView.setImageBitmap(img);
-//                            }
-//                        });
-//                    }
-//                }
-//            }).start();
-
-
             if (canTrackerInit) {
-                double x = startPoint.x;
-                double y = startPoint.y;
-                double w = startPoint.x - endPoint.x;
-                double h = startPoint.y - endPoint.y;
+                int x = (int) startPoint.x;
+                int y = (int) startPoint.y;
+                int w = (int) (startPoint.x - endPoint.x);
+                int h = (int) (startPoint.y - endPoint.y);
 
                 if (w < 0) {
                     w = -w;
                 } else {
-                    x = endPoint.x;
+                    x = (int) endPoint.x;
                 }
 
                 if (h < 0) {
                     h = -h;
                 } else {
-                    y = endPoint.y;
+                    y = (int) endPoint.y;
                 }
-                cmtTracker.OpenCMT(mat.getNativeObjAddr(),
-                        (int) (x / SCALE),
-                        (int) (y / SCALE),
-                        (int) ((x + w) / SCALE),
-                        (int) ((y + h) / SCALE),
-                        cameraEngine.isFrontCamera());
+                x /= SCALE;
+                y /= SCALE;
+                w /= SCALE;
+                h /= SCALE;
+                cmtTracker.OpenCMT(mat.getNativeObjAddr(), x, y, w, h);
                 canTrackerInit = false;
                 startTracking = true;
             }
 
             if (startTracking) {
-                cmtTracker.ProcessCMT(mat.getNativeObjAddr(), cameraEngine.isFrontCamera());
+                cmtTracker.ProcessCMT(mat.getNativeObjAddr());
                 final int[] rect = cmtTracker.CMTgetRect();
 
                 if (cmtTracker.CMTgetResult()) {
@@ -1266,18 +1276,18 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
 //                    Log.d("CMTgetRect", p.toString() + " [" + width + "," + height + "]");
 
-                    MainActivity.this.runOnUiThread(new Runnable() {
+//                    cameraEngine.setMeteringAreas((int)p.x*SCALE, (int)p.y*SCALE, width*SCALE, height*SCALE);
+
+                    runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             final int w = ((rect[2]*SCALE)>SCREEN_WIDTH) ? SCREEN_WIDTH : rect[2]*SCALE;
                             final int h = (((rect[3]*SCALE)>SCREEN_HEIGHT) ? SCREEN_HEIGHT : rect[3]*SCALE);
 
                             if (w < boxWidth && h < boxHeight) {
-                                trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE,
-                                        w, h, 0);
+                                trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE, w, h, 0);
                             } else {
-                                trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE,
-                                        (int)boxWidth, (int)boxHeight, 0);
+                                trackingBoxUtils.setRect((int) p.x * SCALE, (int) p.y * SCALE, (int)boxWidth, (int)boxHeight, 0);
                             }
 
                             trackingBox.setVisibility(View.VISIBLE);
@@ -1285,8 +1295,8 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     });
 
                     {
-                        int xoffset = 0;
-                        int yoffset = 0;
+                        int xoffset;
+                        int yoffset;
 
                         if (cameraEngine.isFrontCamera()) {
                             xoffset = (int) (mat.cols()/2 - (p.x + width/2.0));
@@ -1343,6 +1353,16 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     });
                 }
             }
+
+//            final Bitmap img = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
+//            Utils.matToBitmap(mat, img);
+//            runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    testImageView.setVisibility(View.VISIBLE);
+//                    testImageView.setImageBitmap(img);
+//                }
+//            });
         }
     }
 
