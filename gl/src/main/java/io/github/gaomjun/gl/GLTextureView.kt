@@ -56,6 +56,8 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
     var orientation: Int? = DEVICE_ORIENTATION_LANDSCAPERIGHT
     private var videoRotation = 0
 
+    var beautifiy: Int = 0
+
     init {
         println("init")
 
@@ -117,13 +119,14 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
         GLHelper.makeGLCurrent(bufferGLWrapper!!)
         bufferGLWrapper?.glProgram = GLHelper.createGLProgram(
                 ShaderHelper.loadShaderCodeFromAssets(context, R.raw.vertex2)!!,
-                ShaderHelper.loadShaderCodeFromAssets(context, R.raw.fragment_beauty)!!
+                ShaderHelper.loadShaderCodeFromAssets(context, R.raw.fragment_beauty_low)!!
         )
         glUseProgram(bufferGLWrapper?.glProgram!!)
         bufferGLWrapper?.textureLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.UNIFORM, bufferGLWrapper?.glProgram!!, "s_texture")
         bufferGLWrapper?.positionLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.ATTRIBUTE, bufferGLWrapper?.glProgram!!, "vPosition")
         bufferGLWrapper?.textureCoordinateLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.ATTRIBUTE, bufferGLWrapper?.glProgram!!, "inputTextureCoordinate")
         bufferGLWrapper?.singleStepOffsetLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.UNIFORM, bufferGLWrapper?.glProgram!!, "singleStepOffset")
+        bufferGLWrapper?.beautifiyLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.UNIFORM, bufferGLWrapper?.glProgram!!, "beautifiy")
         bufferGLWrapper?.transformMatrixLocation = LocationHelper.getLocation(LocationHelper.LOCATION_TYPE.UNIFORM, bufferGLWrapper?.glProgram!!, "transformMatrix")
         glUseProgram(0)
 
@@ -178,7 +181,7 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
         renderHandler?.removeMessages(WHAT_INIT)
         renderHandler?.sendMessage(renderHandler?.obtainMessage(WHAT_INIT))
 
-        surfaceTextureCallback?.onSurfaceTextureAvailable(surface, width, height)
+        surfaceTextureCallback?.onSurfaceTextureAvailable(surface, frameWidth, frameHeight)
     }
 
     override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
@@ -187,9 +190,9 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
         frameWidth = width
         frameHeight = height
 
-        glViewport(0, 0, width, height)
+        glViewport(0, 0, frameWidth, frameHeight)
 
-        surfaceTextureCallback?.onSurfaceTextureSizeChanged(surface, width, height)
+        surfaceTextureCallback?.onSurfaceTextureSizeChanged(surface, frameWidth, frameHeight)
     }
 
     override fun onSurfaceTextureUpdated(surface: SurfaceTexture?) {
@@ -334,6 +337,7 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
 
         glUniform1i(bufferGLWrapper?.textureLocation!!, 0)
         glUniform2fv(bufferGLWrapper?.singleStepOffsetLocation!!, 1, floatArrayOf((2.0 / width).toFloat(), (2.0 / height).toFloat()), 0)
+        glUniform1i(bufferGLWrapper?.beautifiyLocation!!, beautifiy)
         glUniformMatrix4fv(bufferGLWrapper?.transformMatrixLocation!!, 1, false, transformMatrix, 0)
 
         bufferGLWrapper?.vPositionLocationVertex?.enableVertexAttribArray(0, bufferGLWrapper?.positionLocation!!, VERTEX_COORDS_PER_VERTEX, VERTEX_STRIDE)

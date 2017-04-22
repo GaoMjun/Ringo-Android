@@ -89,7 +89,8 @@ import static io.github.gaomjun.motionorientation.MotionOrientation.getDEVICE_OR
 
 public class MainActivity extends AppCompatActivity implements CVCamera.FrameCallback,
         EasyPermissions.PermissionCallbacks,
-        MotionOrientation.DeviceOrientationListener {
+        MotionOrientation.DeviceOrientationListener,
+        CameraEngine.DetectFaceListener {
     private static final int REQUEST_BLUETOOTH_ON_CODE = 11;
     private TimeLabel timeLabel = new TimeLabel();
     private BLEDriven bleDriven = null;
@@ -792,6 +793,17 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         }
     }
 
+    @Override
+    public void faceDetected(boolean detected) {
+        if (detected) {
+//            Log.d("faceDetected", "detected");
+            cameraView.setBeautifiy(1);
+        } else {
+//            Log.d("faceDetected", "not detected");
+            cameraView.setBeautifiy(0);
+        }
+    }
+
     private class RecvDataListener implements BLEDriven.RecvCallback {
 
         @Override
@@ -1075,6 +1087,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         cvCamera.delegate = MainActivity.this;
         cameraEngine = cvCamera.cameraEngine;
         cameraEngine.context = MainActivity.this;
+        cameraEngine.setDetectFaceListener(this);
     }
 
     private MotionOrientation motionOrientation;
@@ -1219,6 +1232,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     @Override
     public void processingFrame(Mat mat) {
+        cvCamera.startTracking = false;
 //        Log.d("processingFrame", mat.size().toString());
         if (trackingThreadHandler != null) {
             trackingThreadHandler.post(new TrackingRunnable(mat));
@@ -1263,10 +1277,10 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
             }
 
             if (startTracking) {
-                cmtTracker.ProcessCMT(mat.getNativeObjAddr());
-                final int[] rect = cmtTracker.CMTgetRect();
+                final int[] rect = new int[4];
+                if (cmtTracker.ProcessCMT(mat.getNativeObjAddr(), rect)) {
+                    cvCamera.startTracking = true;
 
-                if (cmtTracker.CMTgetResult()) {
                     sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_GOOD);
 
                     final Point p = new Point(rect[0], rect[1]);
@@ -1332,6 +1346,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                     }
 
                 } else {
+                    cvCamera.startTracking = true;
                     sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_WEAK);
                     sendMessage.setXoffset(TypeConversion.intToBytes(0));
                     sendMessage.setYoffset(TypeConversion.intToBytes(0));

@@ -39,6 +39,7 @@ public class CameraEngine {
     public static int previewHeight;
 
     private boolean supportMetering = false;
+    private boolean supportFaceDetect = false;
 
     private static Camera.PreviewCallback previewCallback;
     private Camera.ShutterCallback shutterCallback = new Camera.ShutterCallback() {
@@ -189,6 +190,7 @@ public class CameraEngine {
 
                 CameraEngine.surfaceTexture = surfaceTexture;
                 camera.startPreview();
+                if (supportFaceDetect) camera.startFaceDetection();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -206,6 +208,7 @@ public class CameraEngine {
             setPictureSize();
             setPreviewFpsRange();
             camera.startPreview();
+            if (supportFaceDetect) camera.startFaceDetection();
         }
     }
 
@@ -277,6 +280,17 @@ public class CameraEngine {
             System.out.println("camera not support Metering");
         }
 
+        int maxNumDetectedFaces = parameters.getMaxNumDetectedFaces();
+        if (maxNumDetectedFaces > 0) {
+            supportFaceDetect = true;
+            System.out.println("camera support " + maxNumDetectedFaces + " detect faces");
+        } else {
+            supportFaceDetect = false;
+            System.out.println("camera not face detect");
+        }
+
+        if (supportFaceDetect) camera.setFaceDetectionListener(new FaceDetectionListener());
+
         camera.setParameters(parameters);
     }
 
@@ -337,8 +351,7 @@ public class CameraEngine {
         if (applySize == null) {
             if (candidateSize != null && candidateSize.size() > 0) {
                 Camera.Size minSize = candidateSize.get(0);
-                for (Camera.Size size :
-                        candidateSize) {
+                for (Camera.Size size : candidateSize) {
 //                    if (size.width == 1280 && size.height == 720) {
 //                        minSize = size;
 //                        break;
@@ -440,26 +453,6 @@ public class CameraEngine {
         return Math.max(min, Math.min(max, val));
     }
 
-//    private class CameraPreviewCallback implements Camera.PreviewCallback {
-//
-//        @Override
-//        public void onPreviewFrame(byte[] data, Camera camera) {
-//            previewCallback.previewCallback(data, previewWidth, previewHeight);
-//
-//            camera.addCallbackBuffer(data);
-//        }
-//    }
-//
-//    public interface PreviewCallback {
-//        void previewCallback(byte[] buffer, int width, int height);
-//    }
-//
-//    private PreviewCallback previewCallback;
-//
-//    public void setPreviewCallback(PreviewCallback previewCallback) {
-//        this.previewCallback = previewCallback;
-//    }
-
     public static int getYUVBufferSize(int width, int height) {
         // stride = ALIGN(width, 16)
         int stride = (int)Math.ceil(width / 16.0) * 16;
@@ -476,4 +469,27 @@ public class CameraEngine {
         // size = y_size + c_size * 2
         return y_size + c_size * 2;
     }
+
+    private class FaceDetectionListener implements Camera.FaceDetectionListener {
+        @Override
+        public void onFaceDetection(Camera.Face[] faces, Camera camera) {
+//            Log.d("onFaceDetection", faces.length + "");
+            if (faces.length > 0) {
+                if (detectFaceListener != null) detectFaceListener.faceDetected(true);
+
+            } else {
+                if (detectFaceListener != null) detectFaceListener.faceDetected(false);
+            }
+        }
+    }
+
+    public interface DetectFaceListener {
+        void faceDetected(boolean detected);
+    }
+
+    public void setDetectFaceListener(DetectFaceListener detectFaceListener) {
+        this.detectFaceListener = detectFaceListener;
+    }
+
+    private DetectFaceListener detectFaceListener;
 }

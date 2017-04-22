@@ -13,6 +13,11 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+
 import io.github.gaomjun.audioengine.AudioEngine;
 import io.github.gaomjun.cameraengine.CameraEngine;
 import io.github.gaomjun.live.encodeConfiguration.VideoConfiguration;
@@ -33,10 +38,10 @@ public class CVCamera {
     public boolean startLive = false;
     public boolean startTracking = false;
     public FrameCallback delegate;
-//    private byte[] cameraCallbackBuffer;
+
+    private ExecutorService trackingThreadPool = Executors.newCachedThreadPool();
 
     private Mat matBuffer;
-    private Mat gray;
 
     private Camera.PreviewCallback cameraPreviewCallback  = new Camera.PreviewCallback() {
         @Override
@@ -53,34 +58,20 @@ public class CVCamera {
             }
 
             if (startTracking) {
-                new Thread(new Runnable() {
+                if (trackingThreadPool == null) trackingThreadPool = Executors.newCachedThreadPool();
+                trackingThreadPool.execute(new Runnable() {
                     @Override
                     public void run() {
-                        synchronized (this) {
-                            Mat mat = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
-                            mat.put(0, 0, data);
-                            if (!mat.empty()) {
-                                final Mat smallMat = mat.clone();
-                                Imgproc.resize(smallMat, smallMat, new org.opencv.core.Size(128, 72), 0, 0, Imgproc.INTER_NEAREST);
-                                if (cameraEngine.isFrontCamera()) Core.flip(smallMat, smallMat, 1);
-                                Imgproc.equalizeHist(smallMat, smallMat);
-                                delegate.processingFrame(smallMat);
-                            }
-                        }
+                        if (matBuffer == null) matBuffer = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
+                        matBuffer.put(0, 0, data);
+                        final Mat smallMat = new Mat();
+                        Imgproc.resize(matBuffer, smallMat, new org.opencv.core.Size(128, 72), 0, 0, Imgproc.INTER_NEAREST);
+                        if (cameraEngine.isFrontCamera()) Core.flip(smallMat, smallMat, 1);
+                        Imgproc.equalizeHist(smallMat, smallMat);
+                        delegate.processingFrame(smallMat);
                     }
-                }).start();
+                });
             }
-
-
-//            if (matBuffer == null) matBuffer = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
-//            matBuffer.put(0, 0, data);
-//            if (!matBuffer.empty()) {
-//                if (gray == null) gray = new Mat(72, 128, CvType.CV_8UC1);
-//                Imgproc.resize(matBuffer, gray, gray.size(), 0, 0, Imgproc.INTER_NEAREST);
-//                if (cameraEngine.isFrontCamera()) Core.flip(gray, gray, 1);
-//                Imgproc.equalizeHist(gray, gray);
-//                delegate.processingFrame(gray);
-//            }
 
             camera.addCallbackBuffer(data);
         }
@@ -107,11 +98,11 @@ public class CVCamera {
     };
 
     public CVCamera() {
-        if (!OpenCVLoader.initDebug()) {
-            Log.d("TAG", "Internal OpenCV library not found");
-        } else {
+        if (OpenCVLoader.initDebug()) {
             Log.d("TAG", "OpenCV library found inside package. Using it!");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        } else {
+            Log.d("TAG", "Internal OpenCV library not found");
         }
     }
 

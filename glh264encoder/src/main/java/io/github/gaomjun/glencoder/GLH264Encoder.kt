@@ -16,7 +16,7 @@ class GLH264Encoder(frameWidth: Int, frameHeight: Int, rotationDegree: Int = 0) 
     val height = frameHeight
     private val rotation = rotationDegree
     private val fps = 30
-    private val bitrate = width * height * 3 * 2
+    private val bitrate = width * height * 3 * 4
 
     private var codec: MediaCodec? = null
 
