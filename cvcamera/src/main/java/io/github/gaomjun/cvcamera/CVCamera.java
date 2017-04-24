@@ -13,6 +13,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,7 +38,7 @@ public class CVCamera {
     public CameraEngine cameraEngine = CameraEngine.getInstance();
     public boolean startLive = false;
     public boolean startTracking = false;
-    public FrameCallback delegate;
+    private ByteBuffer frameBuffer;
 
     private ExecutorService trackingThreadPool = Executors.newCachedThreadPool();
 
@@ -62,13 +63,22 @@ public class CVCamera {
                 trackingThreadPool.execute(new Runnable() {
                     @Override
                     public void run() {
-                        if (matBuffer == null) matBuffer = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
-                        matBuffer.put(0, 0, data);
-                        final Mat smallMat = new Mat();
-                        Imgproc.resize(matBuffer, smallMat, new org.opencv.core.Size(128, 72), 0, 0, Imgproc.INTER_NEAREST);
-                        if (cameraEngine.isFrontCamera()) Core.flip(smallMat, smallMat, 1);
-                        Imgproc.equalizeHist(smallMat, smallMat);
-                        delegate.processingFrame(smallMat);
+                        if (delegate != null) {
+                            if (matBuffer == null)
+                                matBuffer = new Mat(cameraEngine.previewHeight, cameraEngine.previewWidth, CvType.CV_8UC1);
+                            matBuffer.put(0, 0, data);
+                            final Mat smallMat = new Mat();
+                            Imgproc.resize(matBuffer, smallMat, new org.opencv.core.Size(128, 72), 0, 0, Imgproc.INTER_NEAREST);
+                            if (cameraEngine.isFrontCamera()) Core.flip(smallMat, smallMat, 1);
+                            delegate.processingFrame(smallMat);
+                        }
+
+                        if (frameListener != null) {
+                            if (frameBuffer == null) frameBuffer = ByteBuffer.allocateDirect(cameraEngine.previewWidth * cameraEngine.previewHeight);
+                            frameBuffer.position(0);
+                            frameBuffer.put(data, 0, frameBuffer.capacity());
+                            frameListener.onFrame(frameBuffer, cameraEngine.previewWidth, cameraEngine.previewHeight);
+                        }
                     }
                 });
             }
@@ -106,7 +116,13 @@ public class CVCamera {
         }
     }
 
+    public FrameCallback delegate;
     public interface FrameCallback {
         void processingFrame(Mat mat);
+    }
+
+    public FrameListener frameListener;
+    public interface FrameListener {
+        void onFrame(ByteBuffer frameBuffer, int frameWidth, int frameHeight);
     }
 }

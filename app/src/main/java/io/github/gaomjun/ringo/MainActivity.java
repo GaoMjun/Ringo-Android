@@ -53,6 +53,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,7 +88,9 @@ import static io.github.gaomjun.motionorientation.MotionOrientation.getDEVICE_OR
 import static io.github.gaomjun.motionorientation.MotionOrientation.getDEVICE_ORIENTATION_PORTRAIT;
 import static io.github.gaomjun.motionorientation.MotionOrientation.getDEVICE_ORIENTATION_UPSIDEDOWN;
 
-public class MainActivity extends AppCompatActivity implements CVCamera.FrameCallback,
+public class MainActivity extends AppCompatActivity implements
+        CVCamera.FrameCallback,
+        CVCamera.FrameListener,
         EasyPermissions.PermissionCallbacks,
         MotionOrientation.DeviceOrientationListener,
         CameraEngine.DetectFaceListener {
@@ -298,6 +301,9 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
 
     @OnTouch(R2.id.activity_main)
     public boolean touchAction(View v, MotionEvent event) {
+        if (bluetooth_devices_list.getVisibility() == View.VISIBLE) {
+            bluetooth_devices_list_close.performClick();
+        }
         if (canTracking == false) return true;
 
         double x, y, w, h;
@@ -1085,6 +1091,7 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
     private void initCvCamera() {
         cvCamera = new CVCamera();
         cvCamera.delegate = MainActivity.this;
+//        cvCamera.frameListener = this;
         cameraEngine = cvCamera.cameraEngine;
         cameraEngine.context = MainActivity.this;
         cameraEngine.setDetectFaceListener(this);
@@ -1241,11 +1248,33 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
         }
     }
 
+
+    @Override
+    public void onFrame(ByteBuffer frameBuffer, int frameWidth, int frameHeight) {
+        cvCamera.startTracking = false;
+
+        if (trackingThreadHandler != null) {
+            trackingThreadHandler.post(new TrackingRunnable(frameBuffer, frameWidth, frameHeight));
+        } else {
+            initTracking();
+        }
+    }
+
     private class TrackingRunnable implements Runnable {
-        private Mat mat = null;
+        private Mat mat;
+
+        private ByteBuffer frameBuffer;
+        private int frameWidth;
+        private int frameHeight;
 
         TrackingRunnable(Mat mat) {
             this.mat = mat;
+        }
+
+        TrackingRunnable(ByteBuffer frameBuffer, int frameWidth, int frameHeight) {
+            this.frameBuffer = frameBuffer;
+            this.frameWidth = frameWidth;
+            this.frameHeight = frameHeight;
         }
 
         @Override
@@ -1272,13 +1301,15 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                 w /= SCALE;
                 h /= SCALE;
                 cmtTracker.OpenCMT(mat.getNativeObjAddr(), x, y, w, h);
+//                cmtTracker.CMTInit(frameBuffer, frameWidth, frameHeight, x, y, w, h, cameraEngine.isFrontCamera());
                 canTrackerInit = false;
                 startTracking = true;
             }
 
             if (startTracking) {
                 final int[] rect = new int[4];
-                if (cmtTracker.ProcessCMT(mat.getNativeObjAddr(), rect)) {
+                 if (cmtTracker.ProcessCMT(mat.getNativeObjAddr(), rect)) {
+//                if (cmtTracker.CMTProcessing(frameBuffer, frameWidth, frameHeight, rect, cameraEngine.isFrontCamera())) {
                     cvCamera.startTracking = true;
 
                     sendMessage.setTrackingQuailty(GimbalMobileBLEProtocol.TRACKING_QUALITY_GOOD);
@@ -1313,11 +1344,11 @@ public class MainActivity extends AppCompatActivity implements CVCamera.FrameCal
                         int yoffset;
 
                         if (cameraEngine.isFrontCamera()) {
-                            xoffset = (int) (mat.cols()/2 - (p.x + width/2.0));
-                            yoffset = (int) (mat.rows()/2 - (p.y + height/2.0));
+                            xoffset = (int) (128/2 - (p.x + width/2.0));
+                            yoffset = (int) (72/2 - (p.y + height/2.0));
                         } else {
-                            xoffset = (int) (-mat.cols()/2 + (p.x + width/2.0));
-                            yoffset = (int) (-mat.rows()/2 + (p.y + height/2.0));
+                            xoffset = (int) (-128/2 + (p.x + width/2.0));
+                            yoffset = (int) (-72/2 + (p.y + height/2.0));
                         }
 
                         xoffset *= 10;
