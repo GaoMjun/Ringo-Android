@@ -3,8 +3,10 @@ package io.github.gaomjun.recorder
 import android.media.AudioTimestamp
 import android.media.MediaCodec
 import android.media.MediaCodec.INFO_OUTPUT_FORMAT_CHANGED
+import android.media.MediaCodec.createEncoderByType
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
+import android.media.MediaFormat.*
 import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
@@ -53,14 +55,14 @@ class AACEncoder : PCMCapture.PCMDataCallback {
     }
 
     private fun initEncoder() {
-        val format = MediaFormat.createAudioFormat(MediaFormat.MIMETYPE_AUDIO_AAC, SAMPLE_RATE, CHANNELS)
-        format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
-        format.setInteger(MediaFormat.KEY_SAMPLE_RATE, SAMPLE_RATE)
-        format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, CHANNELS)
-        format.setInteger(MediaFormat.KEY_BIT_RATE, BITRATE)
-        format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, MAX_INPUT_SIZE)
+        val format = createAudioFormat(MIMETYPE_AUDIO_AAC, SAMPLE_RATE, CHANNELS)
+        format.setInteger(KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC)
+        format.setInteger(KEY_SAMPLE_RATE, SAMPLE_RATE)
+        format.setInteger(KEY_CHANNEL_COUNT, CHANNELS)
+        format.setInteger(KEY_BIT_RATE, BITRATE)
+        format.setInteger(KEY_MAX_INPUT_SIZE, MAX_INPUT_SIZE)
 
-        codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC)
+        codec = createEncoderByType(MIMETYPE_AUDIO_AAC)
         codec?.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
 
         codec?.start()

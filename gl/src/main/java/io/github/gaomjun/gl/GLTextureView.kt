@@ -171,8 +171,8 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
         println("onSurfaceTextureAvailable")
         this.surface = surface
-        frameWidth = width
-        frameHeight = height
+        frameWidth = width/2
+        frameHeight = height/2
 
         renderThread = HandlerThread("renderThread")
         renderThread?.start()
@@ -187,8 +187,8 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
     override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture?, width: Int, height: Int) {
         println("onSurfaceTextureSizeChanged")
 
-        frameWidth = width
-        frameHeight = height
+        frameWidth = width/2
+        frameHeight = height/2
 
         glViewport(0, 0, frameWidth, frameHeight)
 
@@ -336,7 +336,7 @@ class GLTextureView(context: Context?, attrs: AttributeSet?) : TextureView(conte
         glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureID!!)
 
         glUniform1i(bufferGLWrapper?.textureLocation!!, 0)
-        glUniform2fv(bufferGLWrapper?.singleStepOffsetLocation!!, 1, floatArrayOf((2.0 / width).toFloat(), (2.0 / height).toFloat()), 0)
+        glUniform2fv(bufferGLWrapper?.singleStepOffsetLocation!!, 1, floatArrayOf((2.0 / frameWidth).toFloat(), (2.0 / frameHeight).toFloat()), 0)
         glUniform1i(bufferGLWrapper?.beautifiyLocation!!, beautifiy)
         glUniformMatrix4fv(bufferGLWrapper?.transformMatrixLocation!!, 1, false, transformMatrix, 0)
 

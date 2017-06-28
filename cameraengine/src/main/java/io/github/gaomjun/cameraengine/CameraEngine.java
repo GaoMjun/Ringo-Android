@@ -289,7 +289,7 @@ public class CameraEngine {
             System.out.println("camera not face detect");
         }
 
-        if (supportFaceDetect) camera.setFaceDetectionListener(new FaceDetectionListener());
+//        if (supportFaceDetect) camera.setFaceDetectionListener(new FaceDetectionListener());
 
         camera.setParameters(parameters);
     }
@@ -335,8 +335,11 @@ public class CameraEngine {
 
         Camera.Size applySize = null;
         if (supportedPreviewSizes != null && supportedPreviewSizes.size() > 0) {
-            for (Camera.Size size :
-                    supportedPreviewSizes) {
+            for (Camera.Size size : supportedPreviewSizes) {
+//                if (size.width == 1280 && size.height == 720) {
+//                    applySize = size;
+//                    break;
+//                }
                 if ((size.width == displaySize.x) && (size.height == displaySize.y)) {
                     applySize = size;
                     break;
@@ -352,10 +355,6 @@ public class CameraEngine {
             if (candidateSize != null && candidateSize.size() > 0) {
                 Camera.Size minSize = candidateSize.get(0);
                 for (Camera.Size size : candidateSize) {
-//                    if (size.width == 1280 && size.height == 720) {
-//                        minSize = size;
-//                        break;
-//                    }
                     minSize = size.width < minSize.width ? size : minSize;
                 }
                 applySize = minSize;
@@ -381,8 +380,7 @@ public class CameraEngine {
         Camera.Size applySize = null;
         if (supportedPictureSizes != null && supportedPictureSizes.size() > 0) {
             Camera.Size maxSize = supportedPictureSizes.get(0);
-            for (Camera.Size size :
-                    supportedPictureSizes) {
+            for (Camera.Size size : supportedPictureSizes) {
                 maxSize = size.width*size.height > maxSize.width*maxSize.height ? size : maxSize;
             }
 
