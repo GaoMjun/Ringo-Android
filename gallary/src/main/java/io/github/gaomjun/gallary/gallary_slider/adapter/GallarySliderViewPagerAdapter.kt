@@ -4,25 +4,22 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import android.support.v4.view.PagerAdapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.RelativeLayout
+import androidx.viewpager.widget.PagerAdapter
 import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.drawable.GlideDrawable
 import com.bumptech.glide.request.animation.GlideAnimation
 import com.bumptech.glide.request.target.SimpleTarget
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import io.github.gaomjun.gallary.R
 import io.github.gaomjun.gallary.gallary_slider.model.GallarySliderItem
-import kotlinx.android.synthetic.main.viewpager_image_view.*
 import java.io.File
 
-class GallarySliderViewPagerAdapter(val context: Context, val data: List<GallarySliderItem>) :
-        PagerAdapter() {
+class GallarySliderViewPagerAdapter(val context: Context, val data: List<GallarySliderItem>) : PagerAdapter() {
 
     val layoutInflator: LayoutInflater
 
@@ -30,7 +27,7 @@ class GallarySliderViewPagerAdapter(val context: Context, val data: List<Gallary
         layoutInflator = LayoutInflater.from(context)
     }
 
-    override fun isViewFromObject(view: View?, `object`: Any?): Boolean {
+    override fun isViewFromObject(view: View, `object`: Any): Boolean {
         return view == `object`
     }
 
@@ -38,7 +35,7 @@ class GallarySliderViewPagerAdapter(val context: Context, val data: List<Gallary
         return data.size
     }
 
-    override fun instantiateItem(container: ViewGroup?, position: Int): Any {
+    override fun instantiateItem(container: ViewGroup, position: Int): Any {
         val page = layoutInflator.inflate(R.layout.viewpager_image_view, container, false)
 
         val photoView = page.findViewById(R.id.photoView) as SubsamplingScaleImageView
@@ -51,8 +48,8 @@ class GallarySliderViewPagerAdapter(val context: Context, val data: List<Gallary
             shareImageView.setOnClickListener {
 
                 val shareIntent = Intent(Intent.ACTION_SEND)
-                shareIntent?.type = "image/*"
-                shareIntent?.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(File(data[position].path)))
+                shareIntent.type = "image/*"
+                shareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(File(data[position].path)))
 
                 context.startActivity(shareIntent)
             }
@@ -60,7 +57,7 @@ class GallarySliderViewPagerAdapter(val context: Context, val data: List<Gallary
 
         loadImage(photoView, position, playImageView)
 
-        container?.addView(page)
+        container.addView(page)
 
         return page
     }
@@ -97,7 +94,7 @@ class GallarySliderViewPagerAdapter(val context: Context, val data: List<Gallary
         }
     }
 
-    override fun destroyItem(container: ViewGroup?, position: Int, `object`: Any?) {
-        container?.removeView(`object` as RelativeLayout)
+    override fun destroyItem(container: ViewGroup, position: Int, `object`: Any) {
+        container.removeView(`object` as RelativeLayout)
     }
 }

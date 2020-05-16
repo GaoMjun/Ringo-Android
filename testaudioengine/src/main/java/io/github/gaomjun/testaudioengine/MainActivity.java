@@ -1,16 +1,7 @@
 package io.github.gaomjun.testaudioengine;
 
 import android.app.Activity;
-import android.media.MediaCodec;
 import android.os.Bundle;
-import android.os.Handler;
-
-import org.jetbrains.annotations.NotNull;
-
-import java.nio.ByteBuffer;
-
-import io.github.gaomjun.recorder.AudioConfiguration;
-import io.github.gaomjun.recorder.AudioEngine;
 
 public class MainActivity extends Activity {
 

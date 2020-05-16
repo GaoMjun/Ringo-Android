@@ -1,19 +1,17 @@
 package io.github.gaomjun.testcameraglpreview
 
 import android.app.Activity
-import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.graphics.SurfaceTexture
 import android.hardware.Camera
 import android.media.AudioManager
-import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.util.Log
-import android.view.*
+import android.view.KeyEvent
+import android.view.View
+import android.view.WindowManager
+import android.widget.ImageButton
 import android.widget.Toast
 import io.github.gaomjun.cameraengine.CameraEngine
 import io.github.gaomjun.extensions.postDelayedR
@@ -29,8 +27,6 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
 
 class MainActivity : Activity(), MotionOrientation.DeviceOrientationListener {
     private var cameraGLSurfaceView: CameraGLSurfaceView? = null
@@ -48,12 +44,12 @@ class MainActivity : Activity(), MotionOrientation.DeviceOrientationListener {
 
         volumeControlStream = AudioManager.STREAM_MUSIC
 
-        glTextureView = findViewById(R.id.glTextureView) as GLTextureView
+        glTextureView = findViewById(R.id.glTextureView)
 
         cameraEngine = CameraEngine.getInstance()
         cameraEngine!!.context = this
 
-        findViewById(R.id.captureButton).setOnClickListener {
+        findViewById<ImageButton>(R.id.captureButton).setOnClickListener {
 
             // record action
 //            if (glTextureView?.recording!!) {

@@ -1,5 +1,6 @@
 package io.github.gaomjun.cameraengine;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -151,6 +152,7 @@ public class CameraEngine2 {
         }
     }
 
+    @SuppressLint("MissingPermission")
     public void openCamera(AutoFitTextureView autoFitTextureView) {
         this.autoFitTextureView = autoFitTextureView;
 

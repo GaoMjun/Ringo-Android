@@ -1,14 +1,11 @@
 package io.github.gaomjun.bletoolkit
 
 import android.app.Activity
-import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import io.github.gaomjun.utils.TypeConversion.HEXString
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 /**
  * Created by qq on 16/2/2017.

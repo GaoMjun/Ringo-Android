@@ -4,6 +4,8 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/src/main/jni/pili-librtmp)
+
 set(librtmp_include_DIR ${CMAKE_SOURCE_DIR}/src/main/jni/pili-librtmp)
 include_directories(${librtmp_include_DIR})
 

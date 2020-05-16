@@ -18,10 +18,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.StatFs;
-import android.support.annotation.Nullable;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -33,6 +29,11 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.daimajia.androidanimations.library.BaseViewAnimator;
 import com.daimajia.androidanimations.library.Techniques;
@@ -578,7 +579,7 @@ public class MainActivity extends AppCompatActivity implements
     @Nullable
     private String ringoDirectory() {
         File ringoDirectory = new File(Environment.getExternalStorageDirectory() + "/" +
-                Environment.DIRECTORY_DCIM + "/", "Ringo");
+                Environment.DIRECTORY_DCIM + "/", Constant.TARGET);
         if (!ringoDirectory.exists()) {
             if (!ringoDirectory.mkdir()) {
                 //TODO

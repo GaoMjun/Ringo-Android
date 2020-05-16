@@ -3,7 +3,8 @@ package pub.devrel.easypermissions;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+
+import androidx.annotation.RequiresApi;
 
 import java.util.Arrays;
 

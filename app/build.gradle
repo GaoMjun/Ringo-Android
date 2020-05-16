@@ -1,17 +1,17 @@
 apply plugin: 'com.android.application'
-apply plugin: 'bugly'
+//apply plugin: 'bugly'
 apply plugin: 'com.jakewharton.butterknife'
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "24.0.2"
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    flavorDimensions "default"
+
     defaultConfig {
-        applicationId "io.github.gaomjun.ringo"
-        minSdkVersion 21
-        targetSdkVersion 22
-        versionCode 1
-        versionName "1.0.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+
         renderscriptTargetApi 22
         renderscriptSupportModeEnabled true
 
@@ -20,63 +20,110 @@ android {
             abiFilter "armeabi-v7a"
         }
     }
+
+    productFlavors {
+
+        Ringo {
+            applicationId "io.github.gaomjun.ringo"
+            versionCode 1
+            versionName "1.0.0"
+
+            resValue "string", "app_name", "Ringo"
+
+        }
+
+        HORIZON {
+            applicationId "com.ceewa.horizon"
+            versionCode 1
+            versionName "1.0.0"
+
+            resValue "string", "app_name", "HORIZON"
+
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
 
             applicationVariants.all { variant ->
-                variant.outputs.each { output ->
-                    project.ext { appName = 'Ringo' }
-                    def formattedDate = new Date().format('yyyy.MM.dd.HH:mm:ss')
+
+                def version = variant.productFlavors[0].versionName;
+                def buildVersion = new Date().format('yyyyMMddHHmmss');
+
+                variant.outputs.all { output ->
                     def newName = output.outputFile.name
 
-                    newName = newName.replace("app-", "$project.ext.appName-")
-                    newName = newName.replace("-release", "-1.0.0-" + formattedDate)
+                    newName = newName.replace("app-", "")
+                    newName = newName.replace("release", version + "-" + buildVersion)
 
-                    output.outputFile = new File(output.outputFile.parent, newName)
+//                    output.outputFile = new File(output.outputFile.parent, newName)
+
+                    outputFileName = newName
                 }
             }
         }
     }
+
+    sourceSets {
+        Ringo {
+            res.srcDirs = ['src/Ringo/res']
+
+            manifest.srcFile 'src/main/AndroidManifest.xml'
+        }
+
+        HORIZON {
+            res.srcDirs = ['src/HORIZON/res']
+
+            manifest.srcFile 'src/main/AndroidManifest.xml'
+        }
+    }
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
-    testCompile 'junit:junit:4.12'
-    compile project(':cvcamera')
-    compile project(':cmttracker')
-    compile 'com.android.support:recyclerview-v7:25.0.1'
-    compile project(':blecommunication')
-    compile project(':utils')
-    compile project(':YoYoAnimation')
-    compile 'com.nineoldandroids:library:2.4.0'
-    compile 'com.daimajia.easing:library:1.0.2@aar'
-    compile 'com.eightbitlab:blurview:1.2.0'
-    compile project(':easypermissions')
-    compile 'com.tencent.bugly:crashreport:2.4.0'
-    compile 'com.tencent.bugly:nativecrashreport:3.1.0'
-    compile project(':timelabel')
-    compile project(':gallary')
-    compile project(':yuv_decoder')
-    compile project(':gl')
-    compile project(':motionorientation')
-    compile 'com.jakewharton:butterknife:8.5.1'
-    annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+
+    implementation 'androidx.core:core-ktx:1.2.0'
+
+    implementation 'com.android.support:recyclerview-v7:28.0.0'
+
+    implementation project(':cvcamera')
+    implementation project(':cmttracker')
+
+    implementation project(':blecommunication')
+    implementation project(':utils')
+    implementation project(':YoYoAnimation')
+    implementation 'com.nineoldandroids:library:2.4.0'
+    implementation 'com.daimajia.easing:library:1.0.2@aar'
+    implementation 'com.eightbitlab:blurview:1.2.0'
+    implementation project(':easypermissions')
+//    implementation 'com.tencent.bugly:crashreport:2.4.0'
+//    implementation 'com.tencent.bugly:nativecrashreport:3.1.0'
+    implementation project(':timelabel')
+    implementation project(':gallary')
+    implementation project(':yuv_decoder')
+    implementation project(':gl')
+    implementation project(':motionorientation')
+    implementation 'com.jakewharton:butterknife:10.2.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:10.2.1'
+    implementation project(path: ':cameraengine')
+    implementation project(path: ':openCVLibrary320')
 }
 
 repositories {
     mavenCentral()
 }
 
-bugly {
-    appId = "0584fe1413"
-    appKey = "5fb2dc66-c892-4508-9986-b16361807854"
-    debug = "true"
-    upload = "true"
-    uploadMapping = "true"
-    uploadSymbol = "true"
-}
+//bugly {
+//    appId = "0584fe1413"
+//    appKey = "5fb2dc66-c892-4508-9986-b16361807854"
+//    debug = "true"
+//    upload = "true"
+//    uploadMapping = "true"
+//    uploadSymbol = "true"
+//}

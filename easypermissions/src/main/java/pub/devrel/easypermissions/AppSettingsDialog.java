@@ -8,10 +8,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.text.TextUtils;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 /**
  * Dialog to prompt the user to go to the app's settings screen and enable permissions. If the
@@ -124,7 +125,7 @@ public class AppSettingsDialog {
          * @param fragment the Fragment in which to display the dialog.
          * @param rationale text explaining why the user should launch the app settings screen.
          */
-        public Builder(@NonNull android.support.v4.app.Fragment fragment, @NonNull String rationale) {
+        public Builder(@NonNull androidx.fragment.app.Fragment fragment, @NonNull String rationale) {
             mActivityOrFragment = fragment;
             mContext = fragment.getContext();
             mRationale = rationale;

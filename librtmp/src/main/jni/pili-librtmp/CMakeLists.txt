@@ -4,11 +4,10 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
-set(librtmp_include_DIR ${CMAKE_SOURCE_DIR})
+set(librtmp_include_DIR .)
 include_directories(${librtmp_include_DIR})
 
-add_library( rtmp
-             SHARED
+add_library( rtmp SHARED
              ${librtmp_include_DIR}/amf.c
              ${librtmp_include_DIR}/error.c
              ${librtmp_include_DIR}/hashswf.c
@@ -16,6 +15,7 @@ add_library( rtmp
              ${librtmp_include_DIR}/parseurl.c
              ${librtmp_include_DIR}/rtmp.c
 )
+#target_include_directories (rtmp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries( rtmp
                        log

@@ -1,8 +1,6 @@
 package io.github.gaomjun.cvcamera;
 
 import android.hardware.Camera;
-import android.os.Handler;
-import android.os.SystemClock;
 import android.util.Log;
 
 import org.opencv.android.InstallCallbackInterface;
@@ -14,10 +12,8 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import io.github.gaomjun.audioengine.AudioEngine;
 import io.github.gaomjun.cameraengine.CameraEngine;

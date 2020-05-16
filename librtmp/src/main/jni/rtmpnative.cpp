@@ -8,6 +8,7 @@
 #include <rtmp.h>
 #include <cstdio>
 #include <log.h>
+#include <string.h>
 
 static const char *TAG = "RTMPNative";
 #define LOGD(fmt, args...) __android_log_print(ANDROID_LOG_DEBUG, TAG, fmt, ##args)

@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="io.github.gaomjun.ringo.MainActivity">
+
+    <io.github.gaomjun.gl.GLTextureView
+        android:id="@+id/cameraView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <View
+        android:id="@+id/trackingBox"
+        android:translationX="100dp"
+        android:translationY="100dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="0dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:padding="0dp"
+        android:background="@drawable/rectviewborder"
+        android:visibility="gone"/>
+
+    <RelativeLayout
+        android:id="@+id/bluetooth_devices_list_view"
+        android:layout_width="240dp"
+        android:layout_height="200dp"
+        android:orientation="vertical"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:background="@color/bluetoothListBackground"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/bluetooth_devices_list_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="@string/Bluetooth"
+            android:textSize="18sp"/>
+
+        <ImageView
+            android:id="@+id/bluetooth_devices_list_close"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignBottom="@+id/bluetooth_devices_list_title"
+            android:src="@drawable/bluetooth_devices_list_close" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/white"
+            android:layout_below="@+id/bluetooth_devices_list_title"/>
+
+        <RelativeLayout
+            android:id="@+id/bluetooth_devices_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/bluetooth_devices_list_title"
+            android:layout_alignParentBottom="true">
+
+        </RelativeLayout>
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/leftbar"
+        android:layout_width="60dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentLeft="true"
+        android:orientation="vertical"
+        android:background="@drawable/leftbar_bg_mask">
+
+        <ImageView
+            android:id="@+id/iv_switch_camera_mode"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_weight="10"
+            android:scaleX="0.9"
+            android:scaleY="0.9"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/camera_mode_photo"/>
+
+        <ImageView
+            android:id="@+id/iv_capture"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/iv_capture"/>
+
+        <ImageView
+            android:id="@+id/iv_switch_camera"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_weight="10"
+            android:scaleX="1.1"
+            android:scaleY="1.1"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/camera_switch"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/rightbar"
+        android:layout_width="60dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        android:orientation="vertical"
+        android:background="@drawable/rightbar_bg_mask">
+
+        <ImageView
+            android:id="@+id/iv_ble"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_weight="10"
+            android:scaleX="1.3"
+            android:scaleY="1.3"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/iv_ble"/>
+
+        <ImageView
+            android:id="@+id/iv_tracking_status"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/iv_switch_tracking"/>
+
+        <ImageView
+            android:id="@+id/iv_album"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_weight="10"
+            android:scaleX="0.8"
+            android:scaleY="0.8"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/iv_album"/>
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/testImageView"
+        android:layout_width="192dp"
+        android:layout_height="108dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/recordTimeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp"
+        android:text="00:11:03|00:30:00"
+        android:textSize="20sp"
+        android:fontFamily="sans-serif-smallcaps"
+        android:visibility="gone"/>
+
+</RelativeLayout>

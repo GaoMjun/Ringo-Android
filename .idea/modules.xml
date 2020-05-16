@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Ringo.iml" filepath="$PROJECT_DIR$/Ringo.iml" group="Ringo" />
+      <module fileurl="file://$PROJECT_DIR$/YoYoAnimation/YoYoAnimation.iml" filepath="$PROJECT_DIR$/YoYoAnimation/YoYoAnimation.iml" group="Ringo/YoYoAnimation" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="Ringo/app" />
+      <module fileurl="file://$PROJECT_DIR$/audioengine/audioengine.iml" filepath="$PROJECT_DIR$/audioengine/audioengine.iml" group="Ringo/audioengine" />
+      <module fileurl="file://$PROJECT_DIR$/blecommunication/blecommunication.iml" filepath="$PROJECT_DIR$/blecommunication/blecommunication.iml" group="Ringo/blecommunication" />
+      <module fileurl="file://$PROJECT_DIR$/bletoolkit/bletoolkit.iml" filepath="$PROJECT_DIR$/bletoolkit/bletoolkit.iml" group="Ringo/bletoolkit" />
+      <module fileurl="file://$PROJECT_DIR$/cameraengine/cameraengine.iml" filepath="$PROJECT_DIR$/cameraengine/cameraengine.iml" group="Ringo/cameraengine" />
+      <module fileurl="file://$PROJECT_DIR$/cmttracker/cmttracker.iml" filepath="$PROJECT_DIR$/cmttracker/cmttracker.iml" group="Ringo/cmttracker" />
+      <module fileurl="file://$PROJECT_DIR$/cvcamera/cvcamera.iml" filepath="$PROJECT_DIR$/cvcamera/cvcamera.iml" group="Ringo/cvcamera" />
+      <module fileurl="file://$PROJECT_DIR$/easypermissions/easypermissions.iml" filepath="$PROJECT_DIR$/easypermissions/easypermissions.iml" group="Ringo/easypermissions" />
+      <module fileurl="file://$PROJECT_DIR$/extensions/extensions.iml" filepath="$PROJECT_DIR$/extensions/extensions.iml" group="Ringo/extensions" />
+      <module fileurl="file://$PROJECT_DIR$/gallary/gallary.iml" filepath="$PROJECT_DIR$/gallary/gallary.iml" group="Ringo/gallary" />
+      <module fileurl="file://$PROJECT_DIR$/gl/gl.iml" filepath="$PROJECT_DIR$/gl/gl.iml" group="Ringo/gl" />
+      <module fileurl="file://$PROJECT_DIR$/glh264encoder/glh264encoder.iml" filepath="$PROJECT_DIR$/glh264encoder/glh264encoder.iml" group="Ringo/glh264encoder" />
+      <module fileurl="file://$PROJECT_DIR$/librtmp/librtmp.iml" filepath="$PROJECT_DIR$/librtmp/librtmp.iml" group="Ringo/librtmp" />
+      <module fileurl="file://$PROJECT_DIR$/libyuv/libyuv.iml" filepath="$PROJECT_DIR$/libyuv/libyuv.iml" group="Ringo/libyuv" />
+      <module fileurl="file://$PROJECT_DIR$/live/live.iml" filepath="$PROJECT_DIR$/live/live.iml" group="Ringo/live" />
+      <module fileurl="file://$PROJECT_DIR$/motionorientation/motionorientation.iml" filepath="$PROJECT_DIR$/motionorientation/motionorientation.iml" group="Ringo/motionorientation" />
+      <module fileurl="file://$PROJECT_DIR$/openCVLibrary320/openCVLibrary320.iml" filepath="$PROJECT_DIR$/openCVLibrary320/openCVLibrary320.iml" group="Ringo/openCVLibrary320" />
+      <module fileurl="file://$PROJECT_DIR$/recorder/recorder.iml" filepath="$PROJECT_DIR$/recorder/recorder.iml" group="Ringo/recorder" />
+      <module fileurl="file://$PROJECT_DIR$/testapp/testapp.iml" filepath="$PROJECT_DIR$/testapp/testapp.iml" group="Ringo/testapp" />
+      <module fileurl="file://$PROJECT_DIR$/testaudioengine/testaudioengine.iml" filepath="$PROJECT_DIR$/testaudioengine/testaudioengine.iml" group="Ringo/testaudioengine" />
+      <module fileurl="file://$PROJECT_DIR$/testcameraengin/testcameraengin.iml" filepath="$PROJECT_DIR$/testcameraengin/testcameraengin.iml" group="Ringo/testcameraengin" />
+      <module fileurl="file://$PROJECT_DIR$/testcameraglpreview/testcameraglpreview.iml" filepath="$PROJECT_DIR$/testcameraglpreview/testcameraglpreview.iml" group="Ringo/testcameraglpreview" />
+      <module fileurl="file://$PROJECT_DIR$/testgl/testgl.iml" filepath="$PROJECT_DIR$/testgl/testgl.iml" group="Ringo/testgl" />
+      <module fileurl="file://$PROJECT_DIR$/timelabel/timelabel.iml" filepath="$PROJECT_DIR$/timelabel/timelabel.iml" group="Ringo/timelabel" />
+      <module fileurl="file://$PROJECT_DIR$/utils/utils.iml" filepath="$PROJECT_DIR$/utils/utils.iml" group="Ringo/utils" />
+      <module fileurl="file://$PROJECT_DIR$/yuv_decoder/yuv_decoder.iml" filepath="$PROJECT_DIR$/yuv_decoder/yuv_decoder.iml" group="Ringo/yuv_decoder" />
+    </modules>
+  </component>
+</project>

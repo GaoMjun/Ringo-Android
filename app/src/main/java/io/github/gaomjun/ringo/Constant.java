@@ -5,5 +5,5 @@ package io.github.gaomjun.ringo;
  */
 
 public final class Constant {
-
+    public static final String TARGET = BuildConfig.FLAVOR;
 }

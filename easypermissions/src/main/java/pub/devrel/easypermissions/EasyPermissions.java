@@ -22,16 +22,17 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
-import android.support.annotation.StringRes;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -167,7 +168,7 @@ public class EasyPermissions {
      */
     @RequiresApi(Build.VERSION_CODES.HONEYCOMB)
     private static void showRationaleDialogFragmentCompat(
-            @NonNull final android.support.v4.app.FragmentManager fragmentManager,
+            @NonNull final androidx.fragment.app.FragmentManager fragmentManager,
             @NonNull String rationale, @StringRes int positiveButton, @StringRes int negativeButton,
             final int requestCode, @NonNull final String... perms) {
 
@@ -336,8 +337,8 @@ public class EasyPermissions {
         checkCallingObjectSuitability(object);
         if (object instanceof android.app.Activity) {
             ActivityCompat.requestPermissions((Activity) object, perms, requestCode);
-        } else if (object instanceof android.support.v4.app.Fragment) {
-            ((android.support.v4.app.Fragment) object).requestPermissions(perms, requestCode);
+        } else if (object instanceof androidx.fragment.app.Fragment) {
+            ((androidx.fragment.app.Fragment) object).requestPermissions(perms, requestCode);
         } else if (object instanceof android.app.Fragment) {
             ((android.app.Fragment) object).requestPermissions(perms, requestCode);
         }
@@ -347,8 +348,8 @@ public class EasyPermissions {
     private static Activity getActivity(@NonNull Object object) {
         if (object instanceof Activity) {
             return ((Activity) object);
-        } else if (object instanceof android.support.v4.app.Fragment) {
-            return ((android.support.v4.app.Fragment) object).getActivity();
+        } else if (object instanceof androidx.fragment.app.Fragment) {
+            return ((androidx.fragment.app.Fragment) object).getActivity();
         } else if (object instanceof android.app.Fragment) {
             return ((android.app.Fragment) object).getActivity();
         } else {
@@ -358,13 +359,13 @@ public class EasyPermissions {
 
     @Nullable
     @SuppressLint("NewApi")
-    private static android.support.v4.app.FragmentManager getSupportFragmentManager(
+    private static androidx.fragment.app.FragmentManager getSupportFragmentManager(
             @NonNull Object object) {
 
-        if (object instanceof android.support.v4.app.FragmentActivity) {
+        if (object instanceof androidx.fragment.app.FragmentActivity) {
             // Support library FragmentActivity
             return ((FragmentActivity) object).getSupportFragmentManager();
-        } else if (object instanceof android.support.v4.app.Fragment) {
+        } else if (object instanceof androidx.fragment.app.Fragment) {
             // Support library Fragment
             return ((Fragment) object).getChildFragmentManager();
         }
@@ -433,7 +434,7 @@ public class EasyPermissions {
         }
         // Make sure Object is an Activity or Fragment
         boolean isActivity = object instanceof android.app.Activity;
-        boolean isSupportFragment = object instanceof android.support.v4.app.Fragment;
+        boolean isSupportFragment = object instanceof androidx.fragment.app.Fragment;
         boolean isAppFragment = object instanceof android.app.Fragment;
         boolean isMinSdkM = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
         if (!(isSupportFragment || isActivity || (isAppFragment && isMinSdkM))) {

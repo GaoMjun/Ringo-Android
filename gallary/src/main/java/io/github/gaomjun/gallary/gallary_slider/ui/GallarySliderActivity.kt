@@ -2,20 +2,15 @@ package io.github.gaomjun.gallary.gallary_slider.ui
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.support.v4.app.ShareCompat
-import android.support.v4.view.ViewPager
-import android.view.Menu
 import android.view.View
 import android.widget.ShareActionProvider
+import androidx.viewpager.widget.ViewPager
 import io.github.gaomjun.gallary.R
 import io.github.gaomjun.gallary.gallary_slider.adapter.GallarySliderViewPagerAdapter
 import io.github.gaomjun.gallary.gallary_slider.model.GallarySliderData
 import io.github.gaomjun.gallary.gallary_slider.model.GallarySliderItem
 import kotlinx.android.synthetic.main.activity_gallary_slider.*
-import kotlinx.android.synthetic.main.viewpager_image_view.*
-import java.io.File
 import java.util.*
 
 

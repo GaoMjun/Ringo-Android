@@ -2,10 +2,7 @@ package io.github.gaomjun.gallary.media_provider;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 
 import java.io.File;
@@ -20,10 +17,12 @@ public class MediaProvider {
 
     public static MediaProvider Instance;
     private final ContentResolver contentResolver;
+    private final Context context;
 
     private ArrayList<MediaItem> media = new ArrayList<>();
 
     public MediaProvider(Context context) {
+        this.context = context;
         this.contentResolver = context.getContentResolver();
         Instance = this;
     }
@@ -100,8 +99,18 @@ public class MediaProvider {
 //        }
 //        cursor.close();
 
+        String packageName = this.context.getApplicationContext().getPackageName();
+        String targetName = null;
+        if (packageName.contains("ringo")) {
+            targetName = "RINGO";
+        } else if (packageName.contains("horizon")) {
+            targetName = "HORIZON";
+        } else {
+            targetName = "RINGO";
+        }
+        Log.d("scanMedia", targetName);
         File ringoDirectory = new File(Environment.getExternalStorageDirectory().toString() + "/" +
-                Environment.DIRECTORY_DCIM + "/", "Ringo");
+                Environment.DIRECTORY_DCIM + "/", targetName);
 
         if (ringoDirectory.exists() && ringoDirectory.isDirectory()) {
             for (File file :

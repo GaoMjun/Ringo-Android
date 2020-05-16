@@ -2,21 +2,17 @@ package io.github.gaomjun.gallary.gallary_grid.adapter;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.request.animation.GlideAnimation;
-import com.bumptech.glide.request.target.SimpleTarget;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 import io.github.gaomjun.gallary.R;
@@ -27,7 +23,7 @@ import io.github.gaomjun.gallary.media_provider.MediaProvider;
 /**
  * Created by qq on 12/12/2016.
  */
-public class GallaryGridRecyclerViewAdapter extends android.support.v7.widget.RecyclerView.Adapter
+public class GallaryGridRecyclerViewAdapter extends RecyclerView.Adapter
         <GallaryGridRecyclerViewAdapter.GallaryGridCellHolder> {
 
     private final Context context;
