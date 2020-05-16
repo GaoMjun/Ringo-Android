@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <option name="delegatedBuild" value="false" />
+        <option name="testRunner" value="PLATFORM" />
+        <option name="distributionType" value="DEFAULT_WRAPPED" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/YoYoAnimation" />
+            <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/audioengine" />
+            <option value="$PROJECT_DIR$/blecommunication" />
+            <option value="$PROJECT_DIR$/bletoolkit" />
+            <option value="$PROJECT_DIR$/cameraengine" />
+            <option value="$PROJECT_DIR$/cmttracker" />
+            <option value="$PROJECT_DIR$/cvcamera" />
+            <option value="$PROJECT_DIR$/easypermissions" />
+            <option value="$PROJECT_DIR$/extensions" />
+            <option value="$PROJECT_DIR$/gallary" />
+            <option value="$PROJECT_DIR$/gl" />
+            <option value="$PROJECT_DIR$/glh264encoder" />
+            <option value="$PROJECT_DIR$/librtmp" />
+            <option value="$PROJECT_DIR$/libyuv" />
+            <option value="$PROJECT_DIR$/live" />
+            <option value="$PROJECT_DIR$/motionorientation" />
+            <option value="$PROJECT_DIR$/openCVLibrary320" />
+            <option value="$PROJECT_DIR$/recorder" />
+            <option value="$PROJECT_DIR$/testapp" />
+            <option value="$PROJECT_DIR$/testaudioengine" />
+            <option value="$PROJECT_DIR$/testcameraengin" />
+            <option value="$PROJECT_DIR$/testcameraglpreview" />
+            <option value="$PROJECT_DIR$/testgl" />
+            <option value="$PROJECT_DIR$/timelabel" />
+            <option value="$PROJECT_DIR$/utils" />
+            <option value="$PROJECT_DIR$/yuv_decoder" />
+          </set>
+        </option>
+        <option name="resolveModulePerSourceSet" value="false" />
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>
